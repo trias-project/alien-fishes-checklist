@@ -1,0 +1,196 @@
+# Darwin Core mapping for checklist dataset
+
+Lien Reyserhove, Dimitri Brosens, Peter Desmet
+
+`r Sys.Date()`
+
+This document describes how we map the checklist data to Darwin Core.
+
+## Setup
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+Set locale (so we use UTF-8 character encoding):
+```{r, eval = F}
+# This works on Mac OS X, might not work on other OS
+Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
+```
+
+Load libraries:
+```{r}
+library(tidyverse) # For data transformations
+
+# None core tidyverse packages:
+library(magrittr)  # For %<>% pipes
+
+# Other packages
+library(janitor)   # For cleaning input data
+library(knitr)     # For nicer (kable) tables
+library(readxl)    # To read excel files
+library(stringr)   # to perform string operations
+library(digest)
+```
+
+Set file paths (all paths should be relative to this script):
+ 
+raw files: 
+ 
+```{r}
+raw_data_file = "../data/raw/ExotischeVissenVlaanderen2016.xlsx"
+```
+
+processed files:
+```{r}
+dwc_taxon_file = "../data/processed/taxon.csv"
+```
+
+## Read the data:
+
+Read the source data:
+ 
+```{r}
+raw_data <- read_excel(raw_data_file, sheet = "Checklist", na = "NA") 
+```
+
+Clean data somewhat: remove empty rows if present
+```{r}
+raw_data %<>%
+  remove_empty_rows() %>%     # Remove empty rows
+  clean_names()               # Have sensible (lowercase) column names
+```
+
+Add prefix `raw_` to all column names to avoid name clashes with Darwin Core terms:
+```{r}
+colnames(raw_data) <- paste0("raw_", colnames(raw_data))
+```
+
+Save those column names as a vector (makes it easier to remove them all later):
+```{r}
+raw_colnames <- colnames(raw_data)
+```
+
+Preview data
+```{r}
+kable(head(raw_data))
+```
+
+## Create taxon core
+```{r}
+taxon <- raw_data
+```
+
+### Pre-processing
+### Term mapping
+ 
+Map the source data to [Darwin Core Taxon](http://rs.gbif.org/core/dwc_taxon_2015-04-24.xml):
+ 
+#### modified
+#### language
+```{r}
+taxon %<>% mutate(language = "en")
+```
+
+#### license
+```{r}
+taxon %<>% mutate(license = "http://creativecommons.org/publicdomain/zero/1.0/")
+```
+
+#### rightsHolder
+```{r}
+taxon %<>% mutate(rightsHolder = "Research Institute for Nature and Forest (INBO)")
+
+```
+
+#### accessRights
+```{r}
+taxon %<>% mutate(accessRights = "http://www.inbo.be/en/norms-for-data-use")
+```
+
+#### bibliographicCitation
+#### informationWithheld
+#### datasetID
+```{r}
+taxon %<>% mutate(datasetID = "")
+```
+
+#### datasetName
+```{r}
+taxon %<>% mutate(datasetName = "Checklist of alien fishes in Flanders, Belgium")
+```
+
+#### references
+#### taxonID
+
+We generate a unique and stable taxonID for each species by using a hash. For this, we use the `digest()`function. The taxonID for a specific species will be identical each time we run the code or update the dataset.
+
+```{r}
+# Vectorize the digest function (The digest() function isn't vectorized. So if you pass in a vector, you get one value for the whole vector rather than a digest for each element of the vector):
+vdigest <- Vectorize(digest)
+
+# Generate taxonID:
+taxon %<>% mutate (taxonID = paste("alien-fishes:taxon:", vdigest (raw_latin_name, algo="md5")))
+
+```
+
+#### scientificNameID
+#### acceptedNameUsageID
+#### parentNameUsageID
+#### originalNameUsageID
+#### nameAccordingToID
+#### namePublishedInID
+#### taxonConceptID
+#### scientificName
+```{r}
+taxon %<>% mutate (scientificName = raw_latin_name)
+```
+
+#### namePublishedInYear
+#### higherClassification
+#### kingdom
+#### family
+
+```{r}
+taxon %<>% mutate (kingdom = "Animalia")
+```
+
+#### phylum
+#### class
+#### order
+#### genus
+#### subgenus
+#### specificEpithet
+#### infraspecificEpithet
+#### taxonRank
+```{r}
+taxon %<>% mutate (taxonRank = "species")
+```
+
+#### verbatimTaxonRank
+#### scientificNameAuthorship
+#### vernacularName
+#### nomenclaturalCode
+```{r}
+taxon %<>% mutate(nomenclaturalCode = "ICZN")
+```
+
+#### taxonomicStatus
+#### nomenclaturalStatus
+#### taxonRemarks
+
+### Post-processing
+
+```{r}
+# Remove the original columns:
+taxon %<>% select(-one_of(raw_colnames))
+
+# Preview data:
+kable(head(taxon))
+
+# Save to CSV:
+write.csv(taxon, file = dwc_taxon_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
+```
+
+
+
