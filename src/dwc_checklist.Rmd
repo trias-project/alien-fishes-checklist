@@ -25,12 +25,14 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 Set locale (so we use UTF-8 character encoding):
+
 ```{r, eval = F}
 # This works on Mac OS X, might not work on other OS
 Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
 ```
 
 Load libraries:
+
 ```{r}
 library(tidyverse) # For data transformations
 
@@ -55,9 +57,8 @@ raw_data_file = "../data/raw/ExotischeVissenVlaanderen2016.xlsx"
 dwc_taxon_file = "../data/processed/taxon.csv"
 ```
 
-## Read the data:
+## Read data
 
- 
 ```{r}
 # Read the source data:
 raw_data <- read_excel(raw_data_file, sheet = "Checklist", na = "NA") 
@@ -74,12 +75,14 @@ colnames(raw_data) <- paste0("raw_", colnames(raw_data))
 raw_colnames <- colnames(raw_data)
 ```
 
-Preview data
+Preview data:
+
 ```{r}
 kable(head(raw_data))
 ```
 
 ## Create taxon core
+
 ```{r}
 taxon <- raw_data
 ```
@@ -91,22 +94,26 @@ Map the source data to [Darwin Core Taxon](http://rs.gbif.org/core/dwc_taxon_201
  
 #### modified
 #### language
+
 ```{r}
 taxon %<>% mutate(language = "en")
 ```
 
 #### license
+
 ```{r}
 taxon %<>% mutate(license = "http://creativecommons.org/publicdomain/zero/1.0/")
 ```
 
 #### rightsHolder
+
 ```{r}
 taxon %<>% mutate(rightsHolder = "Research Institute for Nature and Forest (INBO)")
 
 ```
 
 #### accessRights
+
 ```{r}
 taxon %<>% mutate(accessRights = "http://www.inbo.be/en/norms-for-data-use")
 ```
@@ -114,11 +121,13 @@ taxon %<>% mutate(accessRights = "http://www.inbo.be/en/norms-for-data-use")
 #### bibliographicCitation
 #### informationWithheld
 #### datasetID
+
 ```{r}
 taxon %<>% mutate(datasetID = "")
 ```
 
 #### datasetName
+
 ```{r}
 taxon %<>% mutate(datasetName = "Checklist of alien fishes in Flanders, Belgium")
 ```
@@ -145,6 +154,7 @@ taxon %<>% mutate (taxonID = paste("alien-fishes:taxon:", vdigest (raw_latin_nam
 #### namePublishedInID
 #### taxonConceptID
 #### scientificName
+
 ```{r}
 taxon %<>% mutate (scientificName = raw_latin_name)
 ```
@@ -166,6 +176,7 @@ taxon %<>% mutate (kingdom = "Animalia")
 #### specificEpithet
 #### infraspecificEpithet
 #### taxonRank
+
 ```{r}
 taxon %<>% mutate (taxonRank = "species")
 ```
@@ -174,6 +185,7 @@ taxon %<>% mutate (taxonRank = "species")
 #### scientificNameAuthorship
 #### vernacularName
 #### nomenclaturalCode
+
 ```{r}
 taxon %<>% mutate(nomenclaturalCode = "ICZN")
 ```
