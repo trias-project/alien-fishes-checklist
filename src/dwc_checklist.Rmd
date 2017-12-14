@@ -183,5 +183,35 @@ kable(head(taxon))
 write.csv(taxon, file = dwc_taxon_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
 ```
 
+## Create Vernacular names extension
+
+### Pre-processing:
+```{r}
+vernacular_names <- raw_data
+```
+
+### Term mapping
+Map the source data to [Vernacular Names](http://rs.gbif.org/extension/gbif/1.0/vernacularname.xml):
+
+#### taxonID
+```{r}
+vernacular_names %<>% mutate (taxonID = paste("alien-fishes:taxon:", vdigest (raw_latin_name, algo="md5")))
+
+identical(vernacular_names $ taxonID, taxonID)
+```
 
 
+#### vernacularName
+#### source	
+#### language
+#### temporal
+#### locationID
+#### locality
+#### countryCode
+#### sex
+#### lifeStage
+#### isPlural
+#### isPreferredName
+#### organismPart
+#### taxonRemarks
+#### datasetID
