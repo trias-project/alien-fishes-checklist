@@ -279,6 +279,16 @@ distribution %<>% mutate(locality = "Flemish Region")
 distribution %<>% mutate(countryCode = "BE")
 ```
 
+### occurrenceStatus
+
+The content for `occurrenceStatus` can be found in `raw_status`.
+
+```{r}
+distribution %<>% mutate (occurrenceStatus = raw_status)
+```
+
+This needs some further processing. 
+
 ### establishmentMeans
 
 Information for `establishmentMeans`can be found in `raw_pathway_s`, which contains a list of introduction pathways. We'll separate, clean, map and combine these values.  
