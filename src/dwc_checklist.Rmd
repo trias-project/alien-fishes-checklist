@@ -30,44 +30,35 @@ library(janitor)   # For cleaning input data
 library(knitr)     # For nicer (kable) tables
 library(readxl)    # To read excel files
 library(stringr)   # to perform string operations
-library(digest)
+library(digest)    # To generate hashes
 ```
 
 Set file paths (all paths should be relative to this script):
  
-raw files: 
- 
 ```{r}
+# Raw files:
 raw_data_file = "../data/raw/ExotischeVissenVlaanderen2016.xlsx"
-```
 
-processed files:
-```{r}
+# Processed files:
 dwc_taxon_file = "../data/processed/taxon.csv"
 ```
 
 ## Read the data:
 
-Read the source data:
  
 ```{r}
+# Read the source data:
 raw_data <- read_excel(raw_data_file, sheet = "Checklist", na = "NA") 
-```
 
-Clean data somewhat: remove empty rows if present
-```{r}
+# Clean the data somewhat: remove empty rows if present
 raw_data %<>%
   remove_empty_rows() %>%     # Remove empty rows
   clean_names()               # Have sensible (lowercase) column names
-```
 
-Add prefix `raw_` to all column names to avoid name clashes with Darwin Core terms:
-```{r}
+# Add prefix `raw_` to all column names to avoid name clashes with Darwin Core terms:
 colnames(raw_data) <- paste0("raw_", colnames(raw_data))
-```
 
-Save those column names as a vector (makes it easier to remove them all later):
-```{r}
+# Save those column names as a vector (makes it easier to remove them all later):
 raw_colnames <- colnames(raw_data)
 ```
 

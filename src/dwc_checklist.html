@@ -122,7 +122,7 @@ $(document).ready(function () {
 <div id="darwin-core-mapping-for-checklist-dataset" class="section level1">
 <h1>Darwin Core mapping for checklist dataset</h1>
 <p>Lien Reyserhove, Dimitri Brosens, Peter Desmet</p>
-<p>2017-12-13</p>
+<p>2017-12-14</p>
 <p>This document describes how we map the checklist data to Darwin Core.</p>
 <div id="setup" class="section level2">
 <h2>Setup</h2>
@@ -139,23 +139,30 @@ library(magrittr)  # For %&lt;&gt;% pipes
 library(janitor)   # For cleaning input data
 library(knitr)     # For nicer (kable) tables
 library(readxl)    # To read excel files
-library(stringr)   # to perform string operations</code></pre>
+library(stringr)   # to perform string operations
+library(digest)    # To generate hashes</code></pre>
 <p>Set file paths (all paths should be relative to this script):</p>
-<p>raw files:</p>
-<pre class="r"><code>raw_data_file = &quot;../data/raw/ExotischeVissenVlaanderen2016.xlsx&quot;</code></pre>
+<pre class="r"><code># Raw files:
+raw_data_file = &quot;../data/raw/ExotischeVissenVlaanderen2016.xlsx&quot;
+
+# Processed files:
+dwc_taxon_file = &quot;../data/processed/taxon.csv&quot;</code></pre>
 </div>
 <div id="read-the-data" class="section level2">
 <h2>Read the data:</h2>
-<p>Read the source data:</p>
-<pre class="r"><code>raw_data &lt;- read_excel(raw_data_file, sheet = &quot;Checklist&quot;, na = &quot;NA&quot;) </code></pre>
-<p>Clean data somewhat: remove empty rows if present</p>
-<pre class="r"><code>raw_data %&lt;&gt;%
+<pre class="r"><code># Read the source data:
+raw_data &lt;- read_excel(raw_data_file, sheet = &quot;Checklist&quot;, na = &quot;NA&quot;) 
+
+# Clean the data somewhat: remove empty rows if present
+raw_data %&lt;&gt;%
   remove_empty_rows() %&gt;%     # Remove empty rows
-  clean_names()               # Have sensible (lowercase) column names</code></pre>
-<p>Add prefix <code>raw_</code> to all column names to avoid name clashes with Darwin Core terms:</p>
-<pre class="r"><code>colnames(raw_data) &lt;- paste0(&quot;raw_&quot;, colnames(raw_data))</code></pre>
-<p>Save those column names as a vector (makes it easier to remove them all later):</p>
-<pre class="r"><code>raw_colnames &lt;- colnames(raw_data)</code></pre>
+  clean_names()               # Have sensible (lowercase) column names
+
+# Add prefix `raw_` to all column names to avoid name clashes with Darwin Core terms:
+colnames(raw_data) &lt;- paste0(&quot;raw_&quot;, colnames(raw_data))
+
+# Save those column names as a vector (makes it easier to remove them all later):
+raw_colnames &lt;- colnames(raw_data)</code></pre>
 <p>Preview data</p>
 <pre class="r"><code>kable(head(raw_data))</code></pre>
 <table>
@@ -234,6 +241,254 @@ library(stringr)   # to perform string operations</code></pre>
 </tr>
 </tbody>
 </table>
+</div>
+<div id="create-taxon-core" class="section level2">
+<h2>Create taxon core</h2>
+<pre class="r"><code>taxon &lt;- raw_data</code></pre>
+<div id="pre-processing" class="section level3">
+<h3>Pre-processing</h3>
+</div>
+<div id="term-mapping" class="section level3">
+<h3>Term mapping</h3>
+<p>Map the source data to <a href="http://rs.gbif.org/core/dwc_taxon_2015-04-24.xml">Darwin Core Taxon</a>:</p>
+<div id="modified" class="section level4">
+<h4>modified</h4>
+</div>
+<div id="language" class="section level4">
+<h4>language</h4>
+<pre class="r"><code>taxon %&lt;&gt;% mutate(language = &quot;en&quot;)</code></pre>
+</div>
+<div id="license" class="section level4">
+<h4>license</h4>
+<pre class="r"><code>taxon %&lt;&gt;% mutate(license = &quot;http://creativecommons.org/publicdomain/zero/1.0/&quot;)</code></pre>
+</div>
+<div id="rightsholder" class="section level4">
+<h4>rightsHolder</h4>
+<pre class="r"><code>taxon %&lt;&gt;% mutate(rightsHolder = &quot;Research Institute for Nature and Forest (INBO)&quot;)</code></pre>
+</div>
+<div id="accessrights" class="section level4">
+<h4>accessRights</h4>
+<pre class="r"><code>taxon %&lt;&gt;% mutate(accessRights = &quot;http://www.inbo.be/en/norms-for-data-use&quot;)</code></pre>
+</div>
+<div id="bibliographiccitation" class="section level4">
+<h4>bibliographicCitation</h4>
+</div>
+<div id="informationwithheld" class="section level4">
+<h4>informationWithheld</h4>
+</div>
+<div id="datasetid" class="section level4">
+<h4>datasetID</h4>
+<pre class="r"><code>taxon %&lt;&gt;% mutate(datasetID = &quot;&quot;)</code></pre>
+</div>
+<div id="datasetname" class="section level4">
+<h4>datasetName</h4>
+<pre class="r"><code>taxon %&lt;&gt;% mutate(datasetName = &quot;Checklist of alien fishes in Flanders, Belgium&quot;)</code></pre>
+</div>
+<div id="references" class="section level4">
+<h4>references</h4>
+</div>
+<div id="taxonid" class="section level4">
+<h4>taxonID</h4>
+<p>We generate a unique and stable taxonID for each species by using a hash. For this, we use the <code>digest()</code>function. The taxonID for a specific species will be identical each time we run the code or update the dataset.</p>
+<pre class="r"><code># Vectorize the digest function (The digest() function isn't vectorized. So if you pass in a vector, you get one value for the whole vector rather than a digest for each element of the vector):
+vdigest &lt;- Vectorize(digest)
+
+# Generate taxonID:
+taxon %&lt;&gt;% mutate (taxonID = paste(&quot;alien-fishes:taxon:&quot;, vdigest (raw_latin_name, algo=&quot;md5&quot;)))</code></pre>
+</div>
+<div id="scientificnameid" class="section level4">
+<h4>scientificNameID</h4>
+</div>
+<div id="acceptednameusageid" class="section level4">
+<h4>acceptedNameUsageID</h4>
+</div>
+<div id="parentnameusageid" class="section level4">
+<h4>parentNameUsageID</h4>
+</div>
+<div id="originalnameusageid" class="section level4">
+<h4>originalNameUsageID</h4>
+</div>
+<div id="nameaccordingtoid" class="section level4">
+<h4>nameAccordingToID</h4>
+</div>
+<div id="namepublishedinid" class="section level4">
+<h4>namePublishedInID</h4>
+</div>
+<div id="taxonconceptid" class="section level4">
+<h4>taxonConceptID</h4>
+</div>
+<div id="scientificname" class="section level4">
+<h4>scientificName</h4>
+<pre class="r"><code>taxon %&lt;&gt;% mutate (scientificName = raw_latin_name)</code></pre>
+</div>
+<div id="namepublishedinyear" class="section level4">
+<h4>namePublishedInYear</h4>
+</div>
+<div id="higherclassification" class="section level4">
+<h4>higherClassification</h4>
+</div>
+<div id="kingdom" class="section level4">
+<h4>kingdom</h4>
+</div>
+<div id="family" class="section level4">
+<h4>family</h4>
+<pre class="r"><code>taxon %&lt;&gt;% mutate (kingdom = &quot;Animalia&quot;)</code></pre>
+</div>
+<div id="phylum" class="section level4">
+<h4>phylum</h4>
+</div>
+<div id="class" class="section level4">
+<h4>class</h4>
+</div>
+<div id="order" class="section level4">
+<h4>order</h4>
+</div>
+<div id="genus" class="section level4">
+<h4>genus</h4>
+</div>
+<div id="subgenus" class="section level4">
+<h4>subgenus</h4>
+</div>
+<div id="specificepithet" class="section level4">
+<h4>specificEpithet</h4>
+</div>
+<div id="infraspecificepithet" class="section level4">
+<h4>infraspecificEpithet</h4>
+</div>
+<div id="taxonrank" class="section level4">
+<h4>taxonRank</h4>
+<pre class="r"><code>taxon %&lt;&gt;% mutate (taxonRank = &quot;species&quot;)</code></pre>
+</div>
+<div id="verbatimtaxonrank" class="section level4">
+<h4>verbatimTaxonRank</h4>
+</div>
+<div id="scientificnameauthorship" class="section level4">
+<h4>scientificNameAuthorship</h4>
+</div>
+<div id="vernacularname" class="section level4">
+<h4>vernacularName</h4>
+</div>
+<div id="nomenclaturalcode" class="section level4">
+<h4>nomenclaturalCode</h4>
+<pre class="r"><code>taxon %&lt;&gt;% mutate(nomenclaturalCode = &quot;ICZN&quot;)</code></pre>
+</div>
+<div id="taxonomicstatus" class="section level4">
+<h4>taxonomicStatus</h4>
+</div>
+<div id="nomenclaturalstatus" class="section level4">
+<h4>nomenclaturalStatus</h4>
+</div>
+<div id="taxonremarks" class="section level4">
+<h4>taxonRemarks</h4>
+</div>
+</div>
+<div id="post-processing" class="section level3">
+<h3>Post-processing</h3>
+<pre class="r"><code># Remove the original columns:
+taxon %&lt;&gt;% select(-one_of(raw_colnames))
+
+# Preview data:
+kable(head(taxon))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">language</th>
+<th align="left">license</th>
+<th align="left">rightsHolder</th>
+<th align="left">accessRights</th>
+<th align="left">datasetID</th>
+<th align="left">datasetName</th>
+<th align="left">taxonID</th>
+<th align="left">scientificName</th>
+<th align="left">kingdom</th>
+<th align="left">taxonRank</th>
+<th align="left">nomenclaturalCode</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">en</td>
+<td align="left"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="uri">http://creativecommons.org/publicdomain/zero/1.0/</a></td>
+<td align="left">Research Institute for Nature and Forest (INBO)</td>
+<td align="left"><a href="http://www.inbo.be/en/norms-for-data-use" class="uri">http://www.inbo.be/en/norms-for-data-use</a></td>
+<td align="left"></td>
+<td align="left">Checklist of alien fishes in Flanders, Belgium</td>
+<td align="left">alien-fishes:taxon: dec8ee68b3fae146c056b4972e3e6b83</td>
+<td align="left">Acipenser baeri</td>
+<td align="left">Animalia</td>
+<td align="left">species</td>
+<td align="left">ICZN</td>
+</tr>
+<tr class="even">
+<td align="left">en</td>
+<td align="left"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="uri">http://creativecommons.org/publicdomain/zero/1.0/</a></td>
+<td align="left">Research Institute for Nature and Forest (INBO)</td>
+<td align="left"><a href="http://www.inbo.be/en/norms-for-data-use" class="uri">http://www.inbo.be/en/norms-for-data-use</a></td>
+<td align="left"></td>
+<td align="left">Checklist of alien fishes in Flanders, Belgium</td>
+<td align="left">alien-fishes:taxon: 35edeae691a00ed23ea01f139e8bfa1f</td>
+<td align="left">Acipenser guldenstaedti</td>
+<td align="left">Animalia</td>
+<td align="left">species</td>
+<td align="left">ICZN</td>
+</tr>
+<tr class="odd">
+<td align="left">en</td>
+<td align="left"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="uri">http://creativecommons.org/publicdomain/zero/1.0/</a></td>
+<td align="left">Research Institute for Nature and Forest (INBO)</td>
+<td align="left"><a href="http://www.inbo.be/en/norms-for-data-use" class="uri">http://www.inbo.be/en/norms-for-data-use</a></td>
+<td align="left"></td>
+<td align="left">Checklist of alien fishes in Flanders, Belgium</td>
+<td align="left">alien-fishes:taxon: 078319c97e97d2b50c582b9b9b792bad</td>
+<td align="left">Acipenser ruthenus</td>
+<td align="left">Animalia</td>
+<td align="left">species</td>
+<td align="left">ICZN</td>
+</tr>
+<tr class="even">
+<td align="left">en</td>
+<td align="left"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="uri">http://creativecommons.org/publicdomain/zero/1.0/</a></td>
+<td align="left">Research Institute for Nature and Forest (INBO)</td>
+<td align="left"><a href="http://www.inbo.be/en/norms-for-data-use" class="uri">http://www.inbo.be/en/norms-for-data-use</a></td>
+<td align="left"></td>
+<td align="left">Checklist of alien fishes in Flanders, Belgium</td>
+<td align="left">alien-fishes:taxon: 6e0fcd4097785a262970615380fdd48d</td>
+<td align="left">Ameiurus nebulosus</td>
+<td align="left">Animalia</td>
+<td align="left">species</td>
+<td align="left">ICZN</td>
+</tr>
+<tr class="odd">
+<td align="left">en</td>
+<td align="left"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="uri">http://creativecommons.org/publicdomain/zero/1.0/</a></td>
+<td align="left">Research Institute for Nature and Forest (INBO)</td>
+<td align="left"><a href="http://www.inbo.be/en/norms-for-data-use" class="uri">http://www.inbo.be/en/norms-for-data-use</a></td>
+<td align="left"></td>
+<td align="left">Checklist of alien fishes in Flanders, Belgium</td>
+<td align="left">alien-fishes:taxon: c937610f85ea8a74f105724c8f198049</td>
+<td align="left">Aspius aspius</td>
+<td align="left">Animalia</td>
+<td align="left">species</td>
+<td align="left">ICZN</td>
+</tr>
+<tr class="even">
+<td align="left">en</td>
+<td align="left"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="uri">http://creativecommons.org/publicdomain/zero/1.0/</a></td>
+<td align="left">Research Institute for Nature and Forest (INBO)</td>
+<td align="left"><a href="http://www.inbo.be/en/norms-for-data-use" class="uri">http://www.inbo.be/en/norms-for-data-use</a></td>
+<td align="left"></td>
+<td align="left">Checklist of alien fishes in Flanders, Belgium</td>
+<td align="left">alien-fishes:taxon: 69bdf9b7a061aed637c31e075156f71c</td>
+<td align="left">Ballerus ballerus</td>
+<td align="left">Animalia</td>
+<td align="left">species</td>
+<td align="left">ICZN</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># Save to CSV:
+write.csv(taxon, file = dwc_taxon_file, na = &quot;&quot;, row.names = FALSE, fileEncoding = &quot;UTF-8&quot;)</code></pre>
+</div>
 </div>
 </div>
 
