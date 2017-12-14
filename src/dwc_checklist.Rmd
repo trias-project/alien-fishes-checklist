@@ -41,7 +41,6 @@ library(magrittr)  # For %<>% pipes
 
 # Other packages
 library(janitor)   # For cleaning input data
-library(knitr)     # For nicer (kable) tables
 library(readxl)    # To read excel files
 library(stringr)   # to perform string operations
 library(digest)    # To generate hashes
@@ -78,7 +77,7 @@ raw_colnames <- colnames(raw_data)
 Preview data:
 
 ```{r}
-kable(head(raw_data))
+head(raw_data)
 ```
 
 ## Create taxon core
@@ -201,7 +200,7 @@ taxon %<>% mutate(nomenclaturalCode = "ICZN")
 taxon %<>% select(-one_of(raw_colnames))
 
 # Preview data:
-kable(head(taxon))
+head(taxon)
 
 # Save to CSV:
 write.csv(taxon, file = dwc_taxon_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
