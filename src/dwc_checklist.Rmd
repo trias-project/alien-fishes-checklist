@@ -9,8 +9,9 @@ date: "`r Sys.Date()`"
 output:
   html_document:
     toc: true
-    toc_depth: 4
+    toc_depth: 3
     toc_float: true
+    number_sections: true
     theme: yeti
     df_print: paged
 knit: (function(input_file, encoding) { rmarkdown::render(input_file, encoding = encoding, output_file = paste0("../docs/",sub(".Rmd", ".html", basename(input_file))))})
@@ -18,7 +19,7 @@ knit: (function(input_file, encoding) { rmarkdown::render(input_file, encoding =
 
 This document describes how we map the checklist data to Darwin Core.
 
-## Setup
+# Setup
 
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
@@ -56,7 +57,7 @@ raw_data_file = "../data/raw/ExotischeVissenVlaanderen2016.xlsx"
 dwc_taxon_file = "../data/processed/taxon.csv"
 ```
 
-## Read data
+# Read data
 
 ```{r}
 # Read the source data:
@@ -81,62 +82,63 @@ raw_data %<>% mutate (taxonID = paste("alien-fishes:taxon:", vdigest (latin_name
 
 Further processing:
 
+```{r}
 # Add prefix `raw_` to all column names to avoid name clashes with Darwin Core terms:
 colnames(raw_data) <- paste0("raw_", colnames(raw_data))
 
 # Save those column names as a vector (makes it easier to remove them all later):
 raw_colnames <- colnames(raw_data)
 ```
-
+ 
 Preview data:
 
 ```{r}
 head(raw_data)
 ```
 
-## Create taxon core
+# Create taxon core
 
 ```{r}
 taxon <- raw_data
 ```
 
-### Pre-processing
-### Term mapping
+## Pre-processing
+## Term mapping
  
 Map the source data to [Darwin Core Taxon](http://rs.gbif.org/core/dwc_taxon_2015-04-24.xml):
  
-#### language
+### language
 
 ```{r}
 taxon %<>% mutate(language = "en")
 ```
 
-#### license
+### license
 
 ```{r}
 taxon %<>% mutate(license = "http://creativecommons.org/publicdomain/zero/1.0/")
 ```
 
-#### rightsHolder
+### rightsHolder
 
 ```{r}
 taxon %<>% mutate(rightsHolder = "Research Institute for Nature and Forest (INBO)")
 
 ```
 
-#### accessRights
+### accessRights
 
 ```{r}
 taxon %<>% mutate(accessRights = "http://www.inbo.be/en/norms-for-data-use")
 ```
 
-#### datasetID
+### datasetID
 
 ```{r}
 taxon %<>% mutate(datasetID = "")
 ```
 
-#### datasetName
+### datasetName
 
 ```{r}
 taxon %<>% mutate(datasetName = "Checklist of alien fishes in Flanders, Belgium")
@@ -148,31 +150,31 @@ taxon %<>% mutate(datasetName = "Checklist of alien fishes in Flanders, Belgium"
 taxon %<>% mutate(taxonID = raw_taxonID)
 ```
 
-#### scientificName
+### scientificName
 
 ```{r}
 taxon %<>% mutate (scientificName = raw_latin_name)
 ```
 
-#### kingdom
+### kingdom
 
 ```{r}
 taxon %<>% mutate (kingdom = "Animalia")
 ```
 
-#### taxonRank
+### taxonRank
 
 ```{r}
 taxon %<>% mutate (taxonRank = "species")
 ```
 
-#### nomenclaturalCode
+### nomenclaturalCode
 
 ```{r}
 taxon %<>% mutate(nomenclaturalCode = "ICZN")
 ```
 
-### Post-processing
+## Post-processing
 
 ```{r}
 # Remove the original columns:
