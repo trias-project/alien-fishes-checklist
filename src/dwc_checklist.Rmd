@@ -91,7 +91,6 @@ taxon <- raw_data
  
 Map the source data to [Darwin Core Taxon](http://rs.gbif.org/core/dwc_taxon_2015-04-24.xml):
  
-#### modified
 #### language
 
 ```{r}
@@ -117,8 +116,6 @@ taxon %<>% mutate(rightsHolder = "Research Institute for Nature and Forest (INBO
 taxon %<>% mutate(accessRights = "http://www.inbo.be/en/norms-for-data-use")
 ```
 
-#### bibliographicCitation
-#### informationWithheld
 #### datasetID
 
 ```{r}
@@ -131,7 +128,6 @@ taxon %<>% mutate(datasetID = "")
 taxon %<>% mutate(datasetName = "Checklist of alien fishes in Flanders, Belgium")
 ```
 
-#### references
 #### taxonID
 
 We generate a unique and stable taxonID for each species by using a hash. For this, we use the `digest()`function. The taxonID for a specific species will be identical each time we run the code or update the dataset.
@@ -145,53 +141,29 @@ taxon %<>% mutate (taxonID = paste("alien-fishes:taxon:", vdigest (raw_latin_nam
 
 ```
 
-#### scientificNameID
-#### acceptedNameUsageID
-#### parentNameUsageID
-#### originalNameUsageID
-#### nameAccordingToID
-#### namePublishedInID
-#### taxonConceptID
 #### scientificName
 
 ```{r}
 taxon %<>% mutate (scientificName = raw_latin_name)
 ```
 
-#### namePublishedInYear
-#### higherClassification
 #### kingdom
-#### family
 
 ```{r}
 taxon %<>% mutate (kingdom = "Animalia")
 ```
 
-#### phylum
-#### class
-#### order
-#### genus
-#### subgenus
-#### specificEpithet
-#### infraspecificEpithet
 #### taxonRank
 
 ```{r}
 taxon %<>% mutate (taxonRank = "species")
 ```
 
-#### verbatimTaxonRank
-#### scientificNameAuthorship
-#### vernacularName
 #### nomenclaturalCode
 
 ```{r}
 taxon %<>% mutate(nomenclaturalCode = "ICZN")
 ```
-
-#### taxonomicStatus
-#### nomenclaturalStatus
-#### taxonRemarks
 
 ### Post-processing
 
