@@ -55,6 +55,7 @@ raw_data_file = "../data/raw/ExotischeVissenVlaanderen2016.xlsx"
 
 # Processed files:
 dwc_taxon_file = "../data/processed/taxon.csv"
+dwc_vernacular_file = "../data/processed/vernacular_names.csv"
 ```
 
 # Read data
@@ -187,35 +188,57 @@ head(taxon)
 write.csv(taxon, file = dwc_taxon_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
 ```
 
-## Create Vernacular names extension
+# Create Vernacular names extension
 
-### Pre-processing:
+## Pre-processing:
 ```{r}
 vernacular_names <- raw_data
 ```
 
-### Term mapping
+## Term mapping
+
 Map the source data to [Vernacular Names](http://rs.gbif.org/extension/gbif/1.0/vernacularname.xml):
 
-#### taxonID
-```{r}
-vernacular_names %<>% mutate (taxonID = paste("alien-fishes:taxon:", vdigest (raw_latin_name, algo="md5")))
+### taxonID
 
-identical(vernacular_names $ taxonID, taxonID)
+```{r}
+vernacular_names %<>% mutate(taxonID = raw_taxonID)
 ```
 
+Vernacular names are available in two languages: English (`raw_common_name`) and Dutch (`raw_nederlandse_naam`). We will create two new columns `English` en `Dutch`, containing their respective vernacular names. We will then gather() these columns to generate one column containing all vernacularnames, linked with one column refering to the specific language.
 
-#### vernacularName
-#### source	
-#### language
-#### temporal
-#### locationID
-#### locality
-#### countryCode
-#### sex
-#### lifeStage
-#### isPlural
-#### isPreferredName
-#### organismPart
-#### taxonRemarks
-#### datasetID
+### vernacularName
+
+```{r}
+# Create two new columns `English`and `Dutch`:
+vernacular_names %<>% 
+  mutate(English = raw_common_name) %<>%
+  mutate(Dutch   = raw_nederlandse_naam)
+
+# Gather these columns to generate `vernaculernamte`and `language`
+vernacular_names %<>% gather(key, value, Dutch, English, na.rm = TRUE, convert = TRUE) %<>% 
+  arrange(taxonID) %<>% # sort on taxonID
+  select(raw_colnames, taxonID, value, key) %<>% # rearrange
+  rename(vernacularNames = value)
+```
+
+### language
+
+The column `key` generated for `vernacularNames` contains the information needed for `language`
+
+```{r}
+vernacular_names %<>% rename (language = key)
+```
+
+## Post-processing:
+
+```{r}
+# Remove the original columns:
+vernacular_names %<>% select(-one_of(raw_colnames))
+
+# Preview data:
+head(vernacular_names)
+
+# Save to CSV:
+write.csv(vernacular_names, file = dwc_vernacular_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
+```
