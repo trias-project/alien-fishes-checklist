@@ -13,7 +13,7 @@
 <meta name="author" content="Dimitri Brosens" />
 <meta name="author" content="Peter Desmet" />
 
-<meta name="date" content="2017-12-14" />
+<meta name="date" content="2017-12-18" />
 
 <title>Darwin Core mapping</title>
 
@@ -224,7 +224,7 @@ div.tocify {
 <h4 class="author"><em>Lien Reyserhove</em></h4>
 <h4 class="author"><em>Dimitri Brosens</em></h4>
 <h4 class="author"><em>Peter Desmet</em></h4>
-<h4 class="date"><em>2017-12-14</em></h4>
+<h4 class="date"><em>2017-12-18</em></h4>
 
 </div>
 
@@ -252,7 +252,9 @@ raw_data_file = &quot;../data/raw/ExotischeVissenVlaanderen2016.xlsx&quot;
 
 # Processed files:
 dwc_taxon_file = &quot;../data/processed/taxon.csv&quot;
-dwc_vernacular_file = &quot;../data/processed/vernacular_names.csv&quot;</code></pre>
+dwc_vernacular_file = &quot;../data/processed/vernacular_names.csv&quot;
+dwc_distribution_file = &quot;../data/processed/distribution.csv&quot;
+dwc_description_file = &quot;../data/processed/description.csv&quot;</code></pre>
 </div>
 <div id="read-data" class="section level1">
 <h1><span class="header-section-number">2</span> Read data</h1>
@@ -263,12 +265,12 @@ raw_data &lt;- read_excel(raw_data_file, sheet = &quot;Checklist&quot;, na = &qu
 raw_data %&lt;&gt;%
   remove_empty_rows() %&gt;%     # Remove empty rows
   clean_names()               # Have sensible (lowercase) column names</code></pre>
-<p>We need to integrate the DwC term <code>taxonID</code> in each of the generated files (Taxon Core and extensions). For this reason, it is easier to to generate this <code>taxonID</code> here in our raw file.</p>
+<p>We need to integrate the DwC term <code>taxonID</code> in each of the generated files (Taxon Core and Extensions). For this reason, it is easier to generate <code>taxonID</code> in the raw file.</p>
 <pre class="r"><code># Vectorize the digest function (The digest() function isn't vectorized. So if you pass in a vector, you get one value for the whole vector rather than a digest for each element of the vector):
 vdigest &lt;- Vectorize(digest)
 
 # Generate taxonID:
-raw_data %&lt;&gt;% mutate (taxonID = paste(&quot;alien-fishes:taxon:&quot;, vdigest (latin_name, algo=&quot;md5&quot;), sep=&quot;&quot;))</code></pre>
+raw_data %&lt;&gt;% mutate(taxonID = paste(&quot;alien-fishes:taxon:&quot;, vdigest (latin_name, algo=&quot;md5&quot;), sep=&quot;&quot;))</code></pre>
 <p>Further processing:</p>
 <pre class="r"><code># Add prefix `raw_` to all column names to avoid name clashes with Darwin Core terms:
 colnames(raw_data) &lt;- paste0(&quot;raw_&quot;, colnames(raw_data))
@@ -322,15 +324,15 @@ raw_colnames &lt;- colnames(raw_data)</code></pre>
 </div>
 <div id="scientificname" class="section level3">
 <h3><span class="header-section-number">3.2.8</span> scientificName</h3>
-<pre class="r"><code>taxon %&lt;&gt;% mutate (scientificName = raw_latin_name)</code></pre>
+<pre class="r"><code>taxon %&lt;&gt;% mutate(scientificName = raw_latin_name)</code></pre>
 </div>
 <div id="kingdom" class="section level3">
 <h3><span class="header-section-number">3.2.9</span> kingdom</h3>
-<pre class="r"><code>taxon %&lt;&gt;% mutate (kingdom = &quot;Animalia&quot;)</code></pre>
+<pre class="r"><code>taxon %&lt;&gt;% mutate(kingdom = &quot;Animalia&quot;)</code></pre>
 </div>
 <div id="taxonrank" class="section level3">
 <h3><span class="header-section-number">3.2.10</span> taxonRank</h3>
-<pre class="r"><code>taxon %&lt;&gt;% mutate (taxonRank = &quot;species&quot;)</code></pre>
+<pre class="r"><code>taxon %&lt;&gt;% mutate(taxonRank = &quot;species&quot;)</code></pre>
 </div>
 <div id="nomenclaturalcode" class="section level3">
 <h3><span class="header-section-number">3.2.11</span> nomenclaturalCode</h3>
@@ -365,24 +367,24 @@ write.csv(taxon, file = dwc_taxon_file, na = &quot;&quot;, row.names = FALSE, fi
 <div id="taxonid-1" class="section level3">
 <h3><span class="header-section-number">4.2.1</span> taxonID</h3>
 <pre class="r"><code>vernacular_names %&lt;&gt;% mutate(taxonID = raw_taxonID)</code></pre>
-<p>Vernacular names are available in two languages: English (<code>raw_common_name</code>) and Dutch (<code>raw_nederlandse_naam</code>). We will create two new columns <code>English</code> en <code>Dutch</code>, containing their respective vernacular names. We will then gather() these columns to generate one column containing all vernacularnames, linked with one column refering to the specific language.</p>
 </div>
 <div id="vernacularname" class="section level3">
 <h3><span class="header-section-number">4.2.2</span> vernacularName</h3>
+<p>Vernacular names are available in two languages: English (<code>raw_common_name</code>) and Dutch (<code>raw_nederlandse_naam</code>). We will create two new columns <code>English</code> en <code>Dutch</code>, containing their respective vernacular names. We will then gather() these columns to generate a column containing all vernacularnames, linked with one column refering to the specific language.</p>
 <pre class="r"><code># Create two new columns `English`and `Dutch`:
 vernacular_names %&lt;&gt;% 
   mutate(English = raw_common_name) %&lt;&gt;%
-  mutate(Dutch   = raw_nederlandse_naam)
+  mutate(Dutch = raw_nederlandse_naam)
 
-# Gather these columns to generate `vernaculernamte`and `language`
+# Gather these columns to generate `vernaculername`and `language`
 vernacular_names %&lt;&gt;% gather(key, value, Dutch, English, na.rm = TRUE, convert = TRUE) %&lt;&gt;% 
   arrange(taxonID) %&lt;&gt;% # sort on taxonID
   select(raw_colnames, taxonID, value, key) %&lt;&gt;% # rearrange
-  rename(vernacularNames = value)</code></pre>
+  rename(vernacularNames = value) # rename</code></pre>
 </div>
 <div id="language-1" class="section level3">
 <h3><span class="header-section-number">4.2.3</span> language</h3>
-<p>The column <code>key</code> generated for <code>vernacularNames</code> contains the information needed for <code>language</code></p>
+<p>The column <code>key</code> generated for <code>vernacularNames</code> contains the information for <code>language</code></p>
 <pre class="r"><code>vernacular_names %&lt;&gt;% rename (language = key)</code></pre>
 </div>
 </div>
@@ -400,6 +402,286 @@ head(vernacular_names)</code></pre>
 </div>
 <pre class="r"><code># Save to CSV:
 write.csv(vernacular_names, file = dwc_vernacular_file, na = &quot;&quot;, row.names = FALSE, fileEncoding = &quot;UTF-8&quot;)</code></pre>
+</div>
+</div>
+<div id="create-distribution-extension" class="section level1">
+<h1><span class="header-section-number">5</span> Create Distribution Extension</h1>
+<div id="pre-processing-2" class="section level2">
+<h2><span class="header-section-number">5.1</span> Pre-processing</h2>
+<pre class="r"><code>distribution &lt;- raw_data</code></pre>
+</div>
+<div id="term-mapping-2" class="section level2">
+<h2><span class="header-section-number">5.2</span> Term mapping</h2>
+<div id="taxonid-2" class="section level3">
+<h3><span class="header-section-number">5.2.1</span> taxonID</h3>
+<pre class="r"><code>distribution %&lt;&gt;% mutate(taxonID = raw_taxonID)</code></pre>
+</div>
+<div id="locationid" class="section level3">
+<h3><span class="header-section-number">5.2.2</span> locationID</h3>
+<pre class="r"><code>distribution %&lt;&gt;% mutate(locationID = &quot;ISO_3166-2:BE-VLG&quot;)</code></pre>
+</div>
+<div id="locality" class="section level3">
+<h3><span class="header-section-number">5.2.3</span> locality</h3>
+<pre class="r"><code>distribution %&lt;&gt;% mutate(locality = &quot;Flemish Region&quot;)</code></pre>
+</div>
+<div id="countrycode" class="section level3">
+<h3><span class="header-section-number">5.2.4</span> countryCode</h3>
+<pre class="r"><code>distribution %&lt;&gt;% mutate(countryCode = &quot;BE&quot;)</code></pre>
+</div>
+<div id="occurrencestatus" class="section level3">
+<h3><span class="header-section-number">5.2.5</span> occurrenceStatus</h3>
+<p>The content for <code>occurrenceStatus</code> can be found in <code>raw_status</code>.</p>
+<pre class="r"><code>distribution %&lt;&gt;% mutate(occurrenceStatus = raw_status)</code></pre>
+</div>
+<div id="establishmentmeans" class="section level3">
+<h3><span class="header-section-number">5.2.6</span> establishmentMeans</h3>
+<p>Information for <code>establishmentMeans</code>can be found in <code>raw_pathway_s</code>, which contains a list of introduction pathways. We’ll separate, clean, map and combine these values.</p>
+<p>First, we create a new column <code>pathway</code>based on <code>raw_pathway_s</code></p>
+<pre class="r"><code>distribution %&lt;&gt;% mutate(pathway = raw_pathway_s)</code></pre>
+<p>We separate <code>pathway</code> in two separte columns:</p>
+<pre class="r"><code>distribution %&lt;&gt;% separate(
+  pathway,
+  into = c(&quot;pathway_1&quot;, &quot;pathway_2&quot;),
+  sep = &quot;, &quot;,
+  remove = TRUE,
+  convert = FALSE,
+  extra = &quot;merge&quot;,
+  fill = &quot;right&quot;
+)</code></pre>
+<p>Gather pathways in a key and value column:</p>
+<pre class="r"><code>distribution %&lt;&gt;% gather(
+  key, value,
+  pathway_1, pathway_2,
+  na.rm = TRUE, # Also removes records for which there is no pathway_1
+  convert = FALSE
+)</code></pre>
+<p>Sort on <code>taxonID</code> to see pathways in context for each record:</p>
+<pre class="r"><code>distribution %&lt;&gt;% arrange(taxonID)</code></pre>
+<p>Show unique values:</p>
+<pre class="r"><code>distribution %&gt;%
+  distinct(value) %&gt;%
+  arrange(value)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["value"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"AM"},{"1":"AN"},{"1":"AQ"},{"1":"BC"},{"1":"BW"},{"1":"OR"},{"1":"UN"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>distribution %&lt;&gt;% mutate(mapped_value = recode(value,
+    &quot;AM&quot; = &quot;Active Migration&quot;,
+    &quot;AN&quot; = &quot;Angling/bait fish&quot;,
+    &quot;AQ&quot; = &quot;Aquaculture&quot;,
+    &quot;BC&quot; = &quot;Biological control&quot;,
+    &quot;BW&quot; = &quot;Ballast Water&quot;,
+    &quot;OR&quot; = &quot;Ornamental&quot;,
+    &quot;UN&quot; = &quot;Unintentional&quot;))</code></pre>
+<p>Show mapped values:</p>
+<pre class="r"><code>distribution %&gt;%
+  select(value, mapped_value) %&gt;%
+  group_by(value, mapped_value) %&gt;%
+  summarize(records = n()) %&gt;%
+  arrange(value) </code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["value"],"name":[1],"type":["chr"],"align":["left"]},{"label":["mapped_value"],"name":[2],"type":["chr"],"align":["left"]},{"label":["records"],"name":[3],"type":["int"],"align":["right"]}],"data":[{"1":"AM","2":"Active Migration","3":"4"},{"1":"AN","2":"Angling/bait fish","3":"6"},{"1":"AQ","2":"Aquaculture","3":"10"},{"1":"BC","2":"Biological control","3":"3"},{"1":"BW","2":"Ballast Water","3":"3"},{"1":"OR","2":"Ornamental","3":"7"},{"1":"UN","2":"Unintentional","3":"2"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>Drop value column:</p>
+<pre class="r"><code>distribution %&lt;&gt;% select(-value)</code></pre>
+<p>Since our pathway controlled vocabulary is not allowed by GBIF in establishmentMeans (see <a href="https://github.com/trias-project/alien-plants-belgium/issues/35">this link</a>), we’ll also add it to the Description Extension. Rather than cleaning it all over again there, we save it here:</p>
+<pre class="r"><code>pathway &lt;- distribution %&gt;% select(
+    one_of(raw_colnames), # Add raw columns
+    mapped_value)</code></pre>
+<p>Spread values back to columns:</p>
+<pre class="r"><code>distribution %&lt;&gt;% spread(key, mapped_value)</code></pre>
+<p>Create <code>establishmentMeans</code> columns where these values are concatentated with |:</p>
+<pre class="r"><code>distribution %&lt;&gt;% mutate(establishmentMeans = 
+  paste(pathway_1, pathway_2, sep = &quot; | &quot;)              
+)</code></pre>
+<p>Annoyingly the paste() function does not provide an rm.na parameter, so NA values will be included as | NA. We can strip those out like this:</p>
+<pre class="r"><code>distribution %&lt;&gt;% mutate(
+  establishmentMeans = str_replace_all(establishmentMeans, &quot; \\| NA&quot;, &quot;&quot;), # Remove ' | NA'
+  establishmentMeans = recode(establishmentMeans, &quot;NA&quot; = &quot;&quot;) # Remove NA at start of string
+)</code></pre>
+</div>
+<div id="eventdate" class="section level3">
+<h3><span class="header-section-number">5.2.7</span> eventDate</h3>
+<p>eventDate will be of format <code>start_year</code>/<code>current_year</code> (yyyy/now). First, we create <code>start_year</code>from <code>raw_introduction</code></p>
+<pre class="r"><code>distribution %&lt;&gt;% mutate(start_year = raw_introduction)</code></pre>
+<p>Clean values:</p>
+<pre class="r"><code># Some `start_year` values are ranges. We change these ranges to the first year for which an observation is plausible.
+distribution %&lt;&gt;% mutate(start_year = recode(start_year,
+    &quot;20xx&quot; = &quot;2000&quot;,
+    &quot;17th c.&quot; = &quot;1601&quot;,
+    &quot;1980s&quot; = &quot;1980&quot;,
+    &quot;13th c.&quot; = &quot;1201&quot;))</code></pre>
+<p>Create <code>current_year</code>:</p>
+<pre class="r"><code>distribution %&lt;&gt;% mutate(current_year = &quot;now&quot;)</code></pre>
+<p>Create <code>eventDate</code>:</p>
+<pre class="r"><code>distribution %&lt;&gt;% mutate(eventDate = paste (start_year, current_year, sep = &quot;/&quot;))</code></pre>
+<p>Compare formated dates with orginal dates in <code>raw_introduction</code>:</p>
+<pre class="r"><code>distribution %&gt;% 
+  select (raw_introduction, eventDate)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["raw_introduction"],"name":[1],"type":["chr"],"align":["left"]},{"label":["eventDate"],"name":[2],"type":["chr"],"align":["left"]}],"data":[{"1":"20xx","2":"2000/now"},{"1":"1967","2":"1967/now"},{"1":"1920","2":"1920/now"},{"1":"1992","2":"1992/now"},{"1":"1990","2":"1990/now"},{"1":"2005","2":"2005/now"},{"1":"1975","2":"1975/now"},{"1":"1884","2":"1884/now"},{"1":"2010","2":"2010/now"},{"1":"2016","2":"2016/now"},{"1":"1884","2":"1884/now"},{"1":"1871","2":"1871/now"},{"1":"1885","2":"1885/now"},{"1":"1890","2":"1890/now"},{"1":"2015","2":"2015/now"},{"1":"17th c.","2":"1601/now"},{"1":"1984","2":"1984/now"},{"1":"2010","2":"2010/now"},{"1":"17th c.","2":"1601/now"},{"1":"1984","2":"1984/now"},{"1":"2001","2":"2001/now"},{"1":"1975","2":"1975/now"},{"1":"13th c.","2":"1201/now"},{"1":"2012","2":"2012/now"},{"1":"1980s","2":"1980/now"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+<div id="post-processing-2" class="section level2">
+<h2><span class="header-section-number">5.3</span> Post-processing</h2>
+<p>Remove the original columns:</p>
+<pre class="r"><code>distribution %&lt;&gt;% select(-one_of(raw_colnames), 
+                         -pathway_1, -pathway_2,
+                         -start_year, -current_year)</code></pre>
+<p>Preview data:</p>
+<pre class="r"><code>distribution %&gt;% head()</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["taxonID"],"name":[1],"type":["chr"],"align":["left"]},{"label":["locationID"],"name":[2],"type":["chr"],"align":["left"]},{"label":["locality"],"name":[3],"type":["chr"],"align":["left"]},{"label":["countryCode"],"name":[4],"type":["chr"],"align":["left"]},{"label":["occurrenceStatus"],"name":[5],"type":["chr"],"align":["left"]},{"label":["establishmentMeans"],"name":[6],"type":["chr"],"align":["left"]},{"label":["eventDate"],"name":[7],"type":["chr"],"align":["left"]}],"data":[{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"A","6":"Aquaculture | Ornamental","7":"2000/now"},{"1":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"A","6":"Biological control","7":"1967/now"},{"1":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"N","6":"Ornamental | Aquaculture","7":"1920/now"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"N","6":"Unintentional | Angling/bait fish","7":"1992/now"},{"1":"alien-fishes:taxon:22e0c0833feaf2c7e7267d9893c5b2ed","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"A*","6":"Aquaculture","7":"1990/now"},{"1":"alien-fishes:taxon:35edeae691a00ed23ea01f139e8bfa1f","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"A","6":"Aquaculture | Ornamental","7":"2005/now"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>Save to .csv:</p>
+<pre class="r"><code>write.csv(distribution, file = dwc_distribution_file, na = &quot;&quot;, row.names = FALSE, fileEncoding = &quot;UTF-8&quot;)</code></pre>
+</div>
+</div>
+<div id="create-description-extension" class="section level1">
+<h1><span class="header-section-number">6</span> Create description extension</h1>
+<p>In the description extension we want to include native range (<code>raw_origin</code>) and pathway (<code>raw_pathway_s</code>) information. We’ll create a separate data frame for both and then combine these with union.</p>
+<div id="pre-processing-3" class="section level2">
+<h2><span class="header-section-number">6.1</span> Pre-processing</h2>
+<div id="native-range" class="section level3">
+<h3><span class="header-section-number">6.1.1</span> Native range</h3>
+<p><code>raw_origin</code> contains native range information (e.g. <code>AS</code>). We’ll separate, map and combine these values.</p>
+<pre class="r"><code>native_range &lt;- raw_data</code></pre>
+<p>Create <code>description</code> from <code>raw_origin</code>:</p>
+<pre class="r"><code>native_range %&lt;&gt;% mutate(description = raw_origin)</code></pre>
+<p>Separate <code>description</code> on <code>&quot; or &quot;</code> in 2 columns:</p>
+<pre class="r"><code>native_range %&lt;&gt;% separate(
+  description,
+  into = c(&quot;native_range_1&quot;, &quot;native_range_2&quot;),
+  sep = &quot; or &quot;,
+  remove = TRUE,
+  convert = FALSE,
+  extra = &quot;merge&quot;,
+  fill = &quot;right&quot;
+)</code></pre>
+<p>Gather native ranges in a key and value column:</p>
+<pre class="r"><code>native_range %&lt;&gt;% gather(
+  key, value,
+  native_range_1, native_range_2,
+  na.rm = TRUE, # Also removes records for which there is no native_range_1
+  convert = FALSE
+)</code></pre>
+<p>Sort on <code>taxonID</code> to see pathways in context for each record:</p>
+<pre class="r"><code>native_range %&lt;&gt;% arrange(raw_taxonID)</code></pre>
+<p>Show values:</p>
+<pre class="r"><code>native_range %&gt;%
+  select(value) %&gt;%
+  group_by(value) %&gt;%
+  summarize(records = n()) %&gt;%
+  arrange(value)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["value"],"name":[1],"type":["chr"],"align":["left"]},{"label":["records"],"name":[2],"type":["int"],"align":["right"]}],"data":[{"1":"AFR","2":"2"},{"1":"AS","2":"7"},{"1":"EE","2":"11"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>Map values:</p>
+<pre class="r"><code>native_range %&lt;&gt;% mutate(mapped_value = recode(value,
+      &quot;AS&quot; = &quot;Asia&quot;,
+      &quot;EE&quot; = &quot;Eastern Europe&quot;,
+      &quot;AFR&quot; = &quot;Africa&quot;))</code></pre>
+<p>Show mapped values:</p>
+<pre class="r"><code>native_range %&gt;%
+  select(value, mapped_value) %&gt;%
+  group_by(value, mapped_value) %&gt;%
+  summarize(records = n()) %&gt;%
+  arrange(value) </code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["value"],"name":[1],"type":["chr"],"align":["left"]},{"label":["mapped_value"],"name":[2],"type":["chr"],"align":["left"]},{"label":["records"],"name":[3],"type":["int"],"align":["right"]}],"data":[{"1":"AFR","2":"Africa","3":"2"},{"1":"AS","2":"Asia","3":"7"},{"1":"EE","2":"Eastern Europe","3":"11"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>Drop <code>key</code> and <code>value</code> column and rename mapped value:</p>
+<pre class="r"><code>native_range %&lt;&gt;% select(-key, -value)
+native_range %&lt;&gt;% rename(description = mapped_value)</code></pre>
+<p>Create a type field to indicate the type of description:</p>
+<pre class="r"><code>native_range %&lt;&gt;% mutate(type = &quot;native range&quot;)</code></pre>
+<p>Preview data:</p>
+<pre class="r"><code>head(native_range)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["raw_latin_name"],"name":[1],"type":["chr"],"align":["left"]},{"label":["raw_nederlandse_naam"],"name":[2],"type":["chr"],"align":["left"]},{"label":["raw_common_name"],"name":[3],"type":["chr"],"align":["left"]},{"label":["raw_origin"],"name":[4],"type":["chr"],"align":["left"]},{"label":["raw_introduction"],"name":[5],"type":["chr"],"align":["left"]},{"label":["raw_pathway_s"],"name":[6],"type":["chr"],"align":["left"]},{"label":["raw_status"],"name":[7],"type":["chr"],"align":["left"]},{"label":["raw_main_pathway"],"name":[8],"type":["chr"],"align":["left"]},{"label":["raw_taxonID"],"name":[9],"type":["chr"],"align":["left"]},{"label":["description"],"name":[10],"type":["chr"],"align":["left"]},{"label":["type"],"name":[11],"type":["chr"],"align":["left"]}],"data":[{"1":"Acipenser ruthenus","2":"Sterlet","3":"Sterlet","4":"EE","5":"20xx","6":"AQ, OR","7":"A","8":"OR","9":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","10":"Eastern Europe","11":"native range"},{"1":"Ctenopharyngodon idella","2":"Graskarper","3":"Grass carp","4":"AS","5":"1967","6":"BC","7":"A","8":"BC","9":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","10":"Asia","11":"native range"},{"1":"Pseudorasbora parva","2":"Blauwbandgrondel","3":"Topmouth gudgeon","4":"AS","5":"1992","6":"UN, AN","7":"N","8":"UN","9":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","10":"Asia","11":"native range"},{"1":"Oreochromis niloticus","2":"(Nijl)tilapia","3":"Nile tilapia","4":"AFR","5":"1990","6":"AQ","7":"A*","8":"AQ","9":"alien-fishes:taxon:22e0c0833feaf2c7e7267d9893c5b2ed","10":"Africa","11":"native range"},{"1":"Acipenser guldenstaedti","2":"Russische steur","3":"Russian sturgeon","4":"EE","5":"2005","6":"AQ, OR","7":"A","8":"OR","9":"alien-fishes:taxon:35edeae691a00ed23ea01f139e8bfa1f","10":"Eastern Europe","11":"native range"},{"1":"Hypophthalmichthys nobilis","2":"Grootkopkarper","3":"Bighead caro","4":"AS","5":"1975","6":"BC","7":"A","8":"BC","9":"alien-fishes:taxon:5340e4b13d517176f46c1b9cd4711ea1","10":"Asia","11":"native range"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div id="pathway" class="section level3">
+<h3><span class="header-section-number">6.1.2</span> Pathway</h3>
+<p><code>Pathway</code> information was already generated for <code>establishmentMeans</code> in the Distribution Extension and saved in a dataframe <code>pathway</code>:</p>
+<pre class="r"><code>head(pathway)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["raw_latin_name"],"name":[1],"type":["chr"],"align":["left"]},{"label":["raw_nederlandse_naam"],"name":[2],"type":["chr"],"align":["left"]},{"label":["raw_common_name"],"name":[3],"type":["chr"],"align":["left"]},{"label":["raw_origin"],"name":[4],"type":["chr"],"align":["left"]},{"label":["raw_introduction"],"name":[5],"type":["chr"],"align":["left"]},{"label":["raw_pathway_s"],"name":[6],"type":["chr"],"align":["left"]},{"label":["raw_status"],"name":[7],"type":["chr"],"align":["left"]},{"label":["raw_main_pathway"],"name":[8],"type":["chr"],"align":["left"]},{"label":["raw_taxonID"],"name":[9],"type":["chr"],"align":["left"]},{"label":["mapped_value"],"name":[10],"type":["chr"],"align":["left"]}],"data":[{"1":"Acipenser ruthenus","2":"Sterlet","3":"Sterlet","4":"EE","5":"20xx","6":"AQ, OR","7":"A","8":"OR","9":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","10":"Aquaculture"},{"1":"Acipenser ruthenus","2":"Sterlet","3":"Sterlet","4":"EE","5":"20xx","6":"AQ, OR","7":"A","8":"OR","9":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","10":"Ornamental"},{"1":"Ctenopharyngodon idella","2":"Graskarper","3":"Grass carp","4":"AS","5":"1967","6":"BC","7":"A","8":"BC","9":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","10":"Biological control"},{"1":"Umbra pygmaea","2":"Amerikaanse hondsvis","3":"Eastern mudminnow","4":"NA","5":"1920","6":"OR, AQ","7":"N","8":"OR","9":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","10":"Ornamental"},{"1":"Umbra pygmaea","2":"Amerikaanse hondsvis","3":"Eastern mudminnow","4":"NA","5":"1920","6":"OR, AQ","7":"N","8":"OR","9":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","10":"Aquaculture"},{"1":"Pseudorasbora parva","2":"Blauwbandgrondel","3":"Topmouth gudgeon","4":"AS","5":"1992","6":"UN, AN","7":"N","8":"UN","9":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","10":"Unintentional"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>It contains one record per pathway (with potentially more than one pathway per taxon). First, we change column name <code>mapped_value</code> to description:</p>
+<pre class="r"><code>pathway %&lt;&gt;%  rename(description = mapped_value)</code></pre>
+<p>Create a <code>type</code> field to indicate the type of description:</p>
+<pre class="r"><code>pathway %&lt;&gt;% mutate(type = &quot;pathway&quot;)</code></pre>
+<p>Show pathway descriptions:</p>
+<pre class="r"><code>pathway %&gt;% 
+  select(description) %&gt;% 
+  group_by(description) %&gt;% 
+  summarize(records = n())</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["description"],"name":[1],"type":["chr"],"align":["left"]},{"label":["records"],"name":[2],"type":["int"],"align":["right"]}],"data":[{"1":"Active Migration","2":"4"},{"1":"Angling/bait fish","2":"6"},{"1":"Aquaculture","2":"10"},{"1":"Ballast Water","2":"3"},{"1":"Biological control","2":"3"},{"1":"Ornamental","2":"7"},{"1":"Unintentional","2":"2"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div id="union-native-range-and-pathway" class="section level3">
+<h3><span class="header-section-number">6.1.3</span> Union native range and pathway:</h3>
+<pre class="r"><code>description_ext &lt;- bind_rows(native_range, pathway)</code></pre>
+</div>
+</div>
+<div id="term-mapping-3" class="section level2">
+<h2><span class="header-section-number">6.2</span> Term mapping</h2>
+<p>Map the source data to <a href="http://rs.gbif.org/extension/gbif/1.0/description.xml">Taxon Description</a></p>
+<div id="taxonid-3" class="section level3">
+<h3><span class="header-section-number">6.2.1</span> taxonID</h3>
+<pre class="r"><code>description_ext %&lt;&gt;% mutate(taxonID = raw_taxonID)</code></pre>
+</div>
+<div id="description" class="section level3">
+<h3><span class="header-section-number">6.2.2</span> description</h3>
+<pre class="r"><code>description_ext %&lt;&gt;% mutate(description = description)</code></pre>
+</div>
+<div id="type" class="section level3">
+<h3><span class="header-section-number">6.2.3</span> type</h3>
+<pre class="r"><code>description_ext %&lt;&gt;% mutate(type = type)</code></pre>
+</div>
+<div id="language-2" class="section level3">
+<h3><span class="header-section-number">6.2.4</span> language</h3>
+<pre class="r"><code>description_ext %&lt;&gt;% mutate(language = &quot;en&quot;)</code></pre>
+</div>
+</div>
+<div id="post-processing-3" class="section level2">
+<h2><span class="header-section-number">6.3</span> Post-processing</h2>
+<p>Remove the original columns:</p>
+<pre class="r"><code>description_ext %&lt;&gt;% select(
+  -one_of(raw_colnames))</code></pre>
+<p>Move <code>taxonID</code> to the first position:</p>
+<pre class="r"><code>description_ext %&lt;&gt;% select(taxonID, everything())</code></pre>
+<p>Sort on <code>taxonID</code>:</p>
+<pre class="r"><code>description_ext %&lt;&gt;% arrange(taxonID)</code></pre>
+<p>Preview data:</p>
+<pre class="r"><code>head(description_ext, 10)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["taxonID"],"name":[1],"type":["chr"],"align":["left"]},{"label":["description"],"name":[2],"type":["chr"],"align":["left"]},{"label":["type"],"name":[3],"type":["chr"],"align":["left"]},{"label":["language"],"name":[4],"type":["chr"],"align":["left"]}],"data":[{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"Eastern Europe","3":"native range","4":"en"},{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"Aquaculture","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"Ornamental","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","2":"Asia","3":"native range","4":"en"},{"1":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","2":"Biological control","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","2":"Ornamental","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","2":"Aquaculture","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"Asia","3":"native range","4":"en"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"Unintentional","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"Angling/bait fish","3":"pathway","4":"en"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>Save to CSV:</p>
+<pre class="r"><code>write.csv(description_ext, file = dwc_description_file, na = &quot;&quot;, row.names = FALSE, fileEncoding = &quot;UTF-8&quot;)</code></pre>
 </div>
 </div>
 
