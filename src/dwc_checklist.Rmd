@@ -57,6 +57,7 @@ raw_data_file = "../data/raw/ExotischeVissenVlaanderen2016.xlsx"
 dwc_taxon_file = "../data/processed/taxon.csv"
 dwc_vernacular_file = "../data/processed/vernacular_names.csv"
 dwc_distribution_file = "../data/processed/distribution.csv"
+dwc_description_file = "../data/processed/description.csv"
 ```
 
 # Read data
@@ -463,3 +464,198 @@ write.csv(distribution, file = dwc_distribution_file, na = "", row.names = FALSE
 ```
 
 
+# Create description extension
+
+In the description extension we want to include native range (`raw_origin`) and pathway (`raw_pathway_s`) information. We'll create a separate data frame for both and then combine these with union.
+
+## Pre-processing
+
+### Native range
+
+`raw_origin` contains native range information (e.g. `AS`). We'll separate, map and combine these values.
+
+```{r}
+native_range <- raw_data
+```
+
+Create `description` from `raw_origin`:
+
+```{r}
+native_range %<>% mutate(description = raw_origin)
+```
+
+Separate `description` on `" or "` in 2 columns:
+
+```{r}
+native_range %<>% separate(
+  description,
+  into = c("native_range_1", "native_range_2"),
+  sep = " or ",
+  remove = TRUE,
+  convert = FALSE,
+  extra = "merge",
+  fill = "right"
+)
+```
+
+Gather native ranges in a key and value column:
+
+```{r}
+native_range %<>% gather(
+  key, value,
+  native_range_1, native_range_2,
+  na.rm = TRUE, # Also removes records for which there is no native_range_1
+  convert = FALSE
+)
+```
+
+Sort on `taxonID` to see pathways in context for each record:
+
+```{r}
+native_range %<>% arrange(raw_taxonID)
+```
+
+Show values:
+
+```{r}
+native_range %>%
+  select(value) %>%
+  group_by(value) %>%
+  summarize(records = n()) %>%
+  arrange(value)
+```
+
+Map values:
+
+```{r}
+native_range %<>% mutate(mapped_value = recode(value,
+      "AS" = "Asia",
+      "EE" = "Eastern Europe",
+      "AFR" = "Africa"))
+```
+
+Show mapped values:
+
+```{r}
+native_range %>%
+  select(value, mapped_value) %>%
+  group_by(value, mapped_value) %>%
+  summarize(records = n()) %>%
+  arrange(value) 
+```
+
+Drop `key` and `value` column and rename mapped value:
+
+```{r}
+native_range %<>% select(-key, -value)
+native_range %<>% rename(description = mapped_value)
+```
+
+Create a type field to indicate the type of description:
+
+```{r}
+native_range %<>% mutate(type = "native range")
+```
+
+Preview data:
+
+```{r}
+head(native_range)
+```
+
+
+### Pathway
+
+`Pathway` information was already generated for `establishmentMeans` in the Distribution Extension and saved in a dataframe `pathway`:
+
+```{r}
+head(pathway)
+```
+
+It contains one record per pathway (with potentially more than one pathway per taxon). First, we change column name `mapped_value` to description:
+
+```{r}
+pathway %<>%  rename(description = mapped_value)
+```
+
+Create a `type` field to indicate the type of description:
+
+```{r}
+pathway %<>% mutate(type = "pathway")
+```
+
+Show pathway descriptions:
+
+```{r}
+pathway %>% 
+  select(description) %>% 
+  group_by(description) %>% 
+  summarize(records = n())
+```
+
+### Union native range and pathway:
+
+```{r}
+description_ext <- bind_rows(native_range, pathway)
+```
+
+## Term mapping
+
+Map the source data to [Taxon Description](http://rs.gbif.org/extension/gbif/1.0/description.xml)
+
+### taxonID
+
+```{r}
+description_ext %<>% mutate(taxonID = raw_taxonID)
+```
+
+### description
+
+```{r}
+description_ext %<>% mutate(description = description)
+```
+
+### type
+
+```{r}
+description_ext %<>% mutate(type = type)
+```
+
+### language
+
+```{r}
+description_ext %<>% mutate(language = "en")
+```
+
+## Post-processing
+
+Remove the original columns:
+
+```{r}
+description_ext %<>% select(
+  -one_of(raw_colnames))
+```
+
+Move `taxonID` to the first position:
+
+```{r}
+description_ext %<>% select(taxonID, everything())
+```
+
+Sort on `taxonID`:
+
+```{r}
+description_ext %<>% arrange(taxonID)
+```
+
+Preview data:
+
+```{r}
+head(description_ext, 10)
+```
+
+Save to CSV:
+
+```{r}
+write.csv(description_ext, file = dwc_description_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
+```
