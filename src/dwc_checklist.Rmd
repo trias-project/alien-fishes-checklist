@@ -283,10 +283,8 @@ distribution %<>% mutate(countryCode = "BE")
 
 ### occurrenceStatus
 
-The content for `occurrenceStatus` can be found in `raw_status`.
-
 ```{r}
-distribution %<>% mutate(occurrenceStatus = raw_status)
+distribution %<>% mutate(occurrenceStatus = "present")
 ```
 
 ### establishmentMeans
