@@ -1,0 +1,36 @@
+# Dataset: alien-fishes
+# DOI: 
+# 
+# Scope: http://rs.gbif.org/extension/gbif/1.0/description.xml
+# Author: Peter Desmet
+# Syntax version: 0.1
+
+taxonID:
+  regex: 'alien-fishes:taxon:[a-z0-9]+'
+
+description:
+  if:
+    - type:
+        allowed: native range
+      allowed: [Africa, Asia, Eastern Europe]
+    - type:
+        allowed: pathway
+      allowed:
+        - cbd_2014_pathway:corridor_water
+        - cbd_2014_pathway:escape_aquaculture
+        - cbd_2014_pathway:escape_ornamental
+        - cbd_2014_pathway:escape_food_bait
+        - cbd_2014_pathway:release_biological_control
+        - cbd_2014_pathway:stowaway_ballast_water
+        - unintentional
+    - type:
+        allowed: invasion stage
+      allowed: [established, naturalized]
+
+type:
+  allowed: [native range, pathway, invasion stage]
+
+# source:
+
+language:
+  allowed: en
