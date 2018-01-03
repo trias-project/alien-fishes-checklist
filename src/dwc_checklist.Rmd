@@ -99,7 +99,7 @@ Preview data:
 head(raw_data)
 ```
 
-# Create taxon core
+# Create Taxon core
 
 ```{r}
 taxon <- raw_data
@@ -350,7 +350,7 @@ write.csv(distribution, file = dwc_distribution_file, na = "", row.names = FALSE
 ```
 
 
-# Create description extension
+# Create Description extension
 
 In the description extension we want to include **native range** (`raw_origin`), **pathway** (`raw_pathway_s`) and **invasion stage** (`raw_status`). We'll create a separate data frame for both and then combine these with union.
 

@@ -286,7 +286,7 @@ raw_colnames &lt;- colnames(raw_data)</code></pre>
 </div>
 </div>
 <div id="create-taxon-core" class="section level1">
-<h1><span class="header-section-number">3</span> Create taxon core</h1>
+<h1><span class="header-section-number">3</span> Create Taxon core</h1>
 <pre class="r"><code>taxon &lt;- raw_data</code></pre>
 <div id="pre-processing" class="section level2">
 <h2><span class="header-section-number">3.1</span> Pre-processing</h2>
@@ -477,8 +477,8 @@ distribution %&lt;&gt;% mutate(start_year = recode(start_year,
 </div>
 </div>
 <div id="create-description-extension" class="section level1">
-<h1><span class="header-section-number">6</span> Create description extension</h1>
-<p>In the description extension we want to include <strong>native range</strong> (<code>raw_origin</code>) and <strong>pathway</strong> (<code>raw_pathway_s</code>). We’ll create a separate data frame for both and then combine these with union.</p>
+<h1><span class="header-section-number">6</span> Create Description extension</h1>
+<p>In the description extension we want to include <strong>native range</strong> (<code>raw_origin</code>), <strong>pathway</strong> (<code>raw_pathway_s</code>) and <strong>invasion stage</strong> (<code>raw_status</code>). We’ll create a separate data frame for both and then combine these with union.</p>
 <div id="pre-processing-3" class="section level2">
 <h2><span class="header-section-number">6.1</span> Pre-processing</h2>
 <div id="native-range" class="section level3">
@@ -581,14 +581,12 @@ arrange(value)</code></pre>
   </script>
 </div>
 <p>We use the <a href="https://github.com/trias-project/vocab/tree/master/vocabulary">standardized vocabulary</a> suggested for TrIAS to perform the mapping. This vocabulary is based on the <a href="https://www.cbd.int/doc/meetings/sbstta/sbstta-18/official/sbstta-18-09-add1-en.pdf">CBD standard</a>. This is an overview of the abbreviations used in the dataset, their interpretation and the mapping to the CBD standard:</p>
-<pre><code>##   abbreviation full name            CBD mapping                
-## 1 &quot;AM&quot;         &quot;Active Migration&quot;   &quot;corridor_water&quot;           
-## 2 &quot;AN&quot;         &quot;Angling/bait fish&quot;  &quot;escape_food_bait&quot;         
-## 3 &quot;AQ&quot;         &quot;Aquaculture&quot;        &quot;escape_aquaculture&quot;       
-## 4 &quot;BC&quot;         &quot;Biological Control&quot; &quot;release_biologica_control&quot;
-## 5 &quot;BW&quot;         &quot;Ballast Water&quot;      &quot;stowaway_ballast_water&quot;   
-## 6 &quot;OR&quot;         &quot;Ornamental&quot;         &quot;escape_ornamental&quot;        
-## 7 &quot;UN&quot;         &quot;Unintentional&quot;      &quot;Unintentional&quot;</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["abbreviation"],"name":[1],"type":["fctr"],"align":["left"]},{"label":["full name"],"name":[2],"type":["fctr"],"align":["left"]},{"label":["CBD mapping"],"name":[3],"type":["fctr"],"align":["left"]}],"data":[{"1":"AM","2":"Active Migration","3":"corridor_water"},{"1":"AN","2":"Angling/bait fish","3":"escape_food_bait"},{"1":"AQ","2":"Aquaculture","3":"escape_aquaculture"},{"1":"BC","2":"Biological Control","3":"release_biologica_control"},{"1":"BW","2":"Ballast Water","3":"stowaway_ballast_water"},{"1":"OR","2":"Ornamental","3":"escape_ornamental"},{"1":"UN","2":"Unintentional","3":"Unintentional"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>Map the abbreviations to CBD standard:</p>
 <pre class="r"><code>pathway %&lt;&gt;% mutate(cbd_standard = recode(value,
 &quot;AM&quot; = &quot;corridor_water&quot;,
 &quot;AN&quot; = &quot;escape_food_bait&quot;,
@@ -597,7 +595,7 @@ arrange(value)</code></pre>
 &quot;BW&quot; = &quot;stowaway_ballast_water&quot;,
 &quot;OR&quot; = &quot;escape_ornamental&quot;,
 &quot;UN&quot; = &quot;unintentional&quot;))</code></pre>
-<p>Add the prefix <code>cbd_2014_pathway:</code>to refer to this standard (but not for <code>unintentional</code>, which does not belong to the standard:</p>
+<p>Add the prefix <code>cbd_2014_pathway:</code>to refer to this standard (but not for <code>unintentional</code>, which has no alternative in the standard:</p>
 <pre class="r"><code>pathway %&lt;&gt;% mutate(mapped_value = case_when (
   cbd_standard != &quot;unintentional&quot; ~ paste(&quot;cbd_2014_pathway:&quot;, cbd_standard),
   cbd_standard == &quot;unintentional&quot; ~ cbd_standard))</code></pre>
@@ -619,9 +617,21 @@ arrange(value) </code></pre>
 <p>Create a <code>type</code> field to indicate the type of description:</p>
 <pre class="r"><code>pathway %&lt;&gt;% mutate(type = &quot;pathway&quot;)</code></pre>
 </div>
-<div id="union-native-range-and-pathway" class="section level3">
-<h3><span class="header-section-number">6.1.3</span> Union native range and pathway:</h3>
-<pre class="r"><code>description_ext &lt;- bind_rows(native_range, pathway)</code></pre>
+<div id="invasion-stage" class="section level3">
+<h3><span class="header-section-number">6.1.3</span> Invasion stage</h3>
+<p>Information for <code>invasion stage</code> can be found in <code>raw_status</code>:</p>
+<pre class="r"><code>invasion_stage &lt;- raw_data</code></pre>
+<p>We generate <code>description</code> in which we recode the information contained in <code>raw_status</code>:</p>
+<pre class="r"><code>invasion_stage %&lt;&gt;% mutate (description = recode(raw_status,
+  &quot;A&quot; = &quot;established&quot;,
+  &quot;A*&quot; = &quot;established&quot;,
+  &quot;N&quot; = &quot;naturalized&quot;))</code></pre>
+<p>Create a <code>type</code> field to indicate the type of description:</p>
+<pre class="r"><code>invasion_stage %&lt;&gt;% mutate(type = &quot;invasion stage&quot;)</code></pre>
+</div>
+<div id="union-native-range-pathway-and-invastion_stage" class="section level3">
+<h3><span class="header-section-number">6.1.4</span> Union <code>native range</code>, <code>pathway</code> and <code>invastion_stage</code>:</h3>
+<pre class="r"><code>description_ext &lt;- bind_rows(native_range, pathway, invasion_stage)</code></pre>
 </div>
 </div>
 <div id="term-mapping-3" class="section level2">
@@ -657,7 +667,7 @@ arrange(value) </code></pre>
 <pre class="r"><code>head(description_ext, 10)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":["taxonID"],"name":[1],"type":["chr"],"align":["left"]},{"label":["description"],"name":[2],"type":["chr"],"align":["left"]},{"label":["type"],"name":[3],"type":["chr"],"align":["left"]},{"label":["language"],"name":[4],"type":["chr"],"align":["left"]}],"data":[{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"Eastern Europe","3":"native range","4":"en"},{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"cbd_2014_pathway: escape_aquaculture","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"cbd_2014_pathway: escape_ornamental","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","2":"Asia","3":"native range","4":"en"},{"1":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","2":"cbd_2014_pathway: release_biological_control","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","2":"cbd_2014_pathway: escape_ornamental","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","2":"cbd_2014_pathway: escape_aquaculture","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"Asia","3":"native range","4":"en"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"unintentional","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"cbd_2014_pathway: escape_food_bait","3":"pathway","4":"en"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["taxonID"],"name":[1],"type":["chr"],"align":["left"]},{"label":["description"],"name":[2],"type":["chr"],"align":["left"]},{"label":["type"],"name":[3],"type":["chr"],"align":["left"]},{"label":["language"],"name":[4],"type":["chr"],"align":["left"]}],"data":[{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"Eastern Europe","3":"native range","4":"en"},{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"cbd_2014_pathway: escape_aquaculture","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"cbd_2014_pathway: escape_ornamental","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"established","3":"invasion stage","4":"en"},{"1":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","2":"Asia","3":"native range","4":"en"},{"1":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","2":"cbd_2014_pathway: release_biological_control","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","2":"established","3":"invasion stage","4":"en"},{"1":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","2":"cbd_2014_pathway: escape_ornamental","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","2":"cbd_2014_pathway: escape_aquaculture","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","2":"naturalized","3":"invasion stage","4":"en"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <p>Save to CSV:</p>
