@@ -104,11 +104,12 @@ head(raw_data)
 
 # Create Taxon core
 
+## Pre-processing
+
 ```{r}
 taxon <- raw_data
 ```
 
-## Pre-processing
 ## Term mapping
  
 Map the source data to [Darwin Core Taxon](http://rs.gbif.org/core/dwc_taxon_2015-04-24.xml):
@@ -182,26 +183,33 @@ taxon %<>% mutate(nomenclaturalCode = "ICZN")
 
 ## Post-processing
 
+Remove the original columns:
+
 ```{r}
-# Remove the original columns:
 taxon %<>% select(-one_of(raw_colnames))
+```
 
-# Preview data:
+Preview data:
+
+```{r}
 head(taxon)
+```
 
-# Save to CSV:
+Save to CSV:
+
+```{r}
 write.csv(taxon, file = dwc_taxon_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
 ```
 
 # Create Vernacular names extension
 
-## Pre-processing:
+## Pre-processing
+
 ```{r}
 vernacular_names <- raw_data
 ```
 
 ## Term mapping
-
 
 Map the source data to [Vernacular Names](http://rs.gbif.org/extension/gbif/1.0/vernacularname.xml):
 
@@ -238,17 +246,23 @@ vernacular_names %<>% rename (language = key)
 
 ## Post-processing:
 
+Remove the original columns:
+
 ```{r}
-# Remove the original columns:
 vernacular_names %<>% select(-one_of(raw_colnames))
-
-# Preview data:
-head(vernacular_names)
-
-# Save to CSV:
-write.csv(vernacular_names, file = dwc_vernacular_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
 ```
 
+Preview data:
+
+```{r}
+head(vernacular_names)
+```
+
+Save to CSV:
+
+```{r}
+write.csv(vernacular_names, file = dwc_vernacular_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
+```
 
 # Create Distribution Extension
   
@@ -330,7 +344,6 @@ distribution %>%
   select (raw_introduction, eventDate)
 ```
 
-
 ## Post-processing
 
 Remove the original columns:
@@ -346,12 +359,11 @@ Preview data:
 distribution %>% head()
 ```
 
-Save to .csv:
+Save to CSV:
 
 ```{r}
 write.csv(distribution, file = dwc_distribution_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
 ```
-
 
 # Create Description extension
 
