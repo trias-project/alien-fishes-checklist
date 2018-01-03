@@ -55,7 +55,7 @@ raw_data_file = "../data/raw/ExotischeVissenVlaanderen2016.xlsx"
 
 # Processed files:
 dwc_taxon_file = "../data/processed/taxon.csv"
-dwc_vernacular_file = "../data/processed/vernacular_names.csv"
+dwc_vernacular_file = "../data/processed/vernacularname.csv"
 dwc_distribution_file = "../data/processed/distribution.csv"
 dwc_description_file = "../data/processed/description.csv"
 ```
