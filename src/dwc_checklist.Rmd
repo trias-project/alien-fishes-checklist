@@ -154,7 +154,7 @@ taxon %<>% mutate(datasetName = "Checklist of alien fishes in Flanders, Belgium"
 ### taxonID
 
 ```{r}
-taxon %<>% mutate(taxonID = raw_taxonID)
+taxon %<>% mutate(taxonID = raw_taxon_id)
 ```
 
 ### scientificName
@@ -170,6 +170,8 @@ taxon %<>% mutate(kingdom = "Animalia")
 ```
 
 ### taxonRank
+
+All taxa are species:
 
 ```{r}
 taxon %<>% mutate(taxonRank = "species")
