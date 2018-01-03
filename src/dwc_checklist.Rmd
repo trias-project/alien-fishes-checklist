@@ -288,113 +288,6 @@ distribution %<>% mutate(occurrenceStatus = "present")
 ```
 
 ### establishmentMeans
-
-Information for `establishmentMeans`can be found in `raw_pathway_s`, which contains a list of introduction pathways. We'll separate, clean, map and combine these values.  
-
-First, we create a new column `pathway`based on `raw_pathway_s`
-
-```{r}
-distribution %<>% mutate(pathway = raw_pathway_s)
-```
-
-We separate `pathway` in two separte columns:
-
-```{r}
-distribution %<>% separate(
-  pathway,
-  into = c("pathway_1", "pathway_2"),
-  sep = ", ",
-  remove = TRUE,
-  convert = FALSE,
-  extra = "merge",
-  fill = "right"
-)
-```
-
-Gather pathways in a key and value column:
-
-```{r}
-distribution %<>% gather(
-  key, value,
-  pathway_1, pathway_2,
-  na.rm = TRUE, # Also removes records for which there is no pathway_1
-  convert = FALSE
-)
-
-```
-
-Sort on `taxonID` to see pathways in context for each record:
-
-```{r}
-distribution %<>% arrange(taxonID)
-```
-
-Show unique values:
-
-```{r}
-distribution %>%
-  distinct(value) %>%
-  arrange(value)
-```
-
-```{r}
-distribution %<>% mutate(mapped_value = recode(value,
-    "AM" = "Active Migration",
-    "AN" = "Angling/bait fish",
-    "AQ" = "Aquaculture",
-    "BC" = "Biological control",
-    "BW" = "Ballast Water",
-    "OR" = "Ornamental",
-    "UN" = "Unintentional"))
-```
-
-Show mapped values:
-
-```{r}
-distribution %>%
-  select(value, mapped_value) %>%
-  group_by(value, mapped_value) %>%
-  summarize(records = n()) %>%
-  arrange(value) 
-```
-
-Drop value column:
-
-```{r}
-distribution %<>% select(-value)
-```
-
-Since our pathway controlled vocabulary is not allowed by GBIF in establishmentMeans (see [this link](https://github.com/trias-project/alien-plants-belgium/issues/35)), we'll also add it to the Description Extension. Rather than cleaning it all over again there, we save it here:
-
-```{r}
-pathway <- distribution %>% select(
-    one_of(raw_colnames), # Add raw columns
-    mapped_value)
-```
-
-Spread values back to columns:
-
-```{r}
-distribution %<>% spread(key, mapped_value)
-```
-
-Create `establishmentMeans` columns where these values are concatentated with |:
-
-```{r}
-distribution %<>% mutate(establishmentMeans = 
-  paste(pathway_1, pathway_2, sep = " | ")              
-)
-```
-
-Annoyingly the paste() function does not provide an rm.na parameter, so NA values will be included as | NA. We can strip those out like this:
-
-```{r}
-distribution %<>% mutate(
-  establishmentMeans = str_replace_all(establishmentMeans, " \\| NA", ""), # Remove ' | NA'
-  establishmentMeans = recode(establishmentMeans, "NA" = "") # Remove NA at start of string
-)
-```
-
 ### eventDate
 
 eventDate will be of format `start_year`/`current_year` (yyyy/now).
@@ -440,8 +333,7 @@ distribution %>%
 Remove the original columns:
 
 ```{r}
-distribution %<>% select(-one_of(raw_colnames), 
-                         -pathway_1, -pathway_2,
+distribution %<>% select(-one_of(raw_colnames),
                          -start_year, -current_year)
 ```
 
@@ -460,7 +352,7 @@ write.csv(distribution, file = dwc_distribution_file, na = "", row.names = FALSE
 
 # Create description extension
 
-In the description extension we want to include native range (`raw_origin`) and pathway (`raw_pathway_s`) information. We'll create a separate data frame for both and then combine these with union.
+In the description extension we want to include **native range** (`raw_origin`) and **pathway** (`raw_pathway_s`). We'll create a separate data frame for both and then combine these with union.
 
 ## Pre-processing
 
@@ -560,13 +452,113 @@ head(native_range)
 
 ### Pathway
 
-`Pathway` information was already generated for `establishmentMeans` in the Distribution Extension and saved in a dataframe `pathway`:
+Information for `pathway` can be found in `raw_pathway_s`, which contains a list of introduction pathways. We'll separate, clean, map and combine these values.  
 
 ```{r}
-head(pathway)
+pathway <- raw_data
 ```
 
-It contains one record per pathway (with potentially more than one pathway per taxon). First, we change column name `mapped_value` to description:
+First, we create a new column `description` based on `raw_pathway_s`
+
+```{r}
+pathway %<>% mutate(description = raw_pathway_s)
+```
+
+We separate `description` in two separte columns:
+
+```{r}
+pathway %<>% separate(
+description,
+into = c("pathway_1", "pathway_2"),
+sep = ", ",
+remove = TRUE,
+convert = FALSE,
+extra = "merge",
+fill = "right"
+)
+```
+
+Gather pathways in a `key` and `value` column:
+
+```{r}
+pathway %<>% gather(
+key, value,
+pathway_1, pathway_2,
+na.rm = TRUE, # Also removes records for which there is no pathway_1
+convert = FALSE
+)
+
+```
+
+Sort on `taxonID` to see pathways in context for each record:
+
+```{r}
+pathway %<>% arrange(raw_taxonID)
+```
+
+Show unique values:
+
+```{r}
+pathway %>%
+distinct(value) %>%
+arrange(value)
+```
+
+We use the [standardized vocabulary](https://github.com/trias-project/vocab/tree/master/vocabulary) suggested for TrIAS to perform the mapping. This vocabulary is based on the [CBD standard](https://www.cbd.int/doc/meetings/sbstta/sbstta-18/official/sbstta-18-09-add1-en.pdf). This is an overview of the abbreviations used in the dataset, their interpretation and the mapping to the CBD standard:
+
+```{r, echo = F}
+as.data.frame(matrix(data = c(
+  "AM", "Active Migration", "corridor_water",
+  "AN", "Angling/bait fish","escape_food_bait",
+  "AQ", "Aquaculture", "escape_aquaculture",
+  "BC", "Biological Control", "release_biologica_control",
+  "BW", "Ballast Water", "stowaway_ballast_water",
+  "OR", "Ornamental", "escape_ornamental",
+  "UN", "Unintentional", "Unintentional"),
+  nrow = 7, ncol = 3, 
+  dimnames = list(c(1:7), c("abbreviation", "full name", "CBD mapping")),
+  byrow = T))
+```
+
+Map the abbreviations to CBD standard:
+
+```{r}
+pathway %<>% mutate(cbd_standard = recode(value,
+"AM" = "corridor_water",
+"AN" = "escape_food_bait",
+"AQ" = "escape_aquaculture",
+"BC" = "release_biological_control",
+"BW" = "stowaway_ballast_water",
+"OR" = "escape_ornamental",
+"UN" = "unintentional"))
+```
+
+Add the prefix `cbd_2014_pathway:`to refer to this standard (but not for `unintentional`, which has no alternative in the standard:
+
+```{r}
+pathway %<>% mutate(mapped_value = case_when (
+  cbd_standard != "unintentional" ~ paste("cbd_2014_pathway:", cbd_standard),
+  cbd_standard == "unintentional" ~ cbd_standard))
+
+```
+
+Show mapped values:
+
+```{r}
+pathway %>%
+select(value, mapped_value) %>%
+group_by(value, mapped_value) %>%
+summarize(records = n()) %>%
+arrange(value) 
+```
+
+Drop `key`, `value` and `cbd_standard` column:
+
+```{r}
+pathway %<>% select(-key, -value, -cbd_standard)
+```
+
+Change column name `mapped_value` to description:
 
 ```{r}
 pathway %<>%  rename(description = mapped_value)
@@ -578,14 +570,8 @@ Create a `type` field to indicate the type of description:
 pathway %<>% mutate(type = "pathway")
 ```
 
-Show pathway descriptions:
 
-```{r}
-pathway %>% 
-  select(description) %>% 
-  group_by(description) %>% 
-  summarize(records = n())
-```
+
 
 ### Union native range and pathway:
 

@@ -13,7 +13,7 @@
 <meta name="author" content="Dimitri Brosens" />
 <meta name="author" content="Peter Desmet" />
 
-<meta name="date" content="2017-12-18" />
+<meta name="date" content="2018-01-03" />
 
 <title>Darwin Core mapping</title>
 
@@ -224,7 +224,7 @@ div.tocify {
 <h4 class="author"><em>Lien Reyserhove</em></h4>
 <h4 class="author"><em>Dimitri Brosens</em></h4>
 <h4 class="author"><em>Peter Desmet</em></h4>
-<h4 class="date"><em>2017-12-18</em></h4>
+<h4 class="date"><em>2018-01-03</em></h4>
 
 </div>
 
@@ -430,78 +430,10 @@ write.csv(vernacular_names, file = dwc_vernacular_file, na = &quot;&quot;, row.n
 </div>
 <div id="occurrencestatus" class="section level3">
 <h3><span class="header-section-number">5.2.5</span> occurrenceStatus</h3>
-<p>The content for <code>occurrenceStatus</code> can be found in <code>raw_status</code>.</p>
-<pre class="r"><code>distribution %&lt;&gt;% mutate(occurrenceStatus = raw_status)</code></pre>
+<pre class="r"><code>distribution %&lt;&gt;% mutate(occurrenceStatus = &quot;present&quot;)</code></pre>
 </div>
 <div id="establishmentmeans" class="section level3">
 <h3><span class="header-section-number">5.2.6</span> establishmentMeans</h3>
-<p>Information for <code>establishmentMeans</code>can be found in <code>raw_pathway_s</code>, which contains a list of introduction pathways. We’ll separate, clean, map and combine these values.</p>
-<p>First, we create a new column <code>pathway</code>based on <code>raw_pathway_s</code></p>
-<pre class="r"><code>distribution %&lt;&gt;% mutate(pathway = raw_pathway_s)</code></pre>
-<p>We separate <code>pathway</code> in two separte columns:</p>
-<pre class="r"><code>distribution %&lt;&gt;% separate(
-  pathway,
-  into = c(&quot;pathway_1&quot;, &quot;pathway_2&quot;),
-  sep = &quot;, &quot;,
-  remove = TRUE,
-  convert = FALSE,
-  extra = &quot;merge&quot;,
-  fill = &quot;right&quot;
-)</code></pre>
-<p>Gather pathways in a key and value column:</p>
-<pre class="r"><code>distribution %&lt;&gt;% gather(
-  key, value,
-  pathway_1, pathway_2,
-  na.rm = TRUE, # Also removes records for which there is no pathway_1
-  convert = FALSE
-)</code></pre>
-<p>Sort on <code>taxonID</code> to see pathways in context for each record:</p>
-<pre class="r"><code>distribution %&lt;&gt;% arrange(taxonID)</code></pre>
-<p>Show unique values:</p>
-<pre class="r"><code>distribution %&gt;%
-  distinct(value) %&gt;%
-  arrange(value)</code></pre>
-<div data-pagedtable="false">
-<script data-pagedtable-source type="application/json">
-{"columns":[{"label":["value"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"AM"},{"1":"AN"},{"1":"AQ"},{"1":"BC"},{"1":"BW"},{"1":"OR"},{"1":"UN"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
-  </script>
-</div>
-<pre class="r"><code>distribution %&lt;&gt;% mutate(mapped_value = recode(value,
-    &quot;AM&quot; = &quot;Active Migration&quot;,
-    &quot;AN&quot; = &quot;Angling/bait fish&quot;,
-    &quot;AQ&quot; = &quot;Aquaculture&quot;,
-    &quot;BC&quot; = &quot;Biological control&quot;,
-    &quot;BW&quot; = &quot;Ballast Water&quot;,
-    &quot;OR&quot; = &quot;Ornamental&quot;,
-    &quot;UN&quot; = &quot;Unintentional&quot;))</code></pre>
-<p>Show mapped values:</p>
-<pre class="r"><code>distribution %&gt;%
-  select(value, mapped_value) %&gt;%
-  group_by(value, mapped_value) %&gt;%
-  summarize(records = n()) %&gt;%
-  arrange(value) </code></pre>
-<div data-pagedtable="false">
-<script data-pagedtable-source type="application/json">
-{"columns":[{"label":["value"],"name":[1],"type":["chr"],"align":["left"]},{"label":["mapped_value"],"name":[2],"type":["chr"],"align":["left"]},{"label":["records"],"name":[3],"type":["int"],"align":["right"]}],"data":[{"1":"AM","2":"Active Migration","3":"4"},{"1":"AN","2":"Angling/bait fish","3":"6"},{"1":"AQ","2":"Aquaculture","3":"10"},{"1":"BC","2":"Biological control","3":"3"},{"1":"BW","2":"Ballast Water","3":"3"},{"1":"OR","2":"Ornamental","3":"7"},{"1":"UN","2":"Unintentional","3":"2"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
-  </script>
-</div>
-<p>Drop value column:</p>
-<pre class="r"><code>distribution %&lt;&gt;% select(-value)</code></pre>
-<p>Since our pathway controlled vocabulary is not allowed by GBIF in establishmentMeans (see <a href="https://github.com/trias-project/alien-plants-belgium/issues/35">this link</a>), we’ll also add it to the Description Extension. Rather than cleaning it all over again there, we save it here:</p>
-<pre class="r"><code>pathway &lt;- distribution %&gt;% select(
-    one_of(raw_colnames), # Add raw columns
-    mapped_value)</code></pre>
-<p>Spread values back to columns:</p>
-<pre class="r"><code>distribution %&lt;&gt;% spread(key, mapped_value)</code></pre>
-<p>Create <code>establishmentMeans</code> columns where these values are concatentated with |:</p>
-<pre class="r"><code>distribution %&lt;&gt;% mutate(establishmentMeans = 
-  paste(pathway_1, pathway_2, sep = &quot; | &quot;)              
-)</code></pre>
-<p>Annoyingly the paste() function does not provide an rm.na parameter, so NA values will be included as | NA. We can strip those out like this:</p>
-<pre class="r"><code>distribution %&lt;&gt;% mutate(
-  establishmentMeans = str_replace_all(establishmentMeans, &quot; \\| NA&quot;, &quot;&quot;), # Remove ' | NA'
-  establishmentMeans = recode(establishmentMeans, &quot;NA&quot; = &quot;&quot;) # Remove NA at start of string
-)</code></pre>
 </div>
 <div id="eventdate" class="section level3">
 <h3><span class="header-section-number">5.2.7</span> eventDate</h3>
@@ -523,7 +455,7 @@ distribution %&lt;&gt;% mutate(start_year = recode(start_year,
   select (raw_introduction, eventDate)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":["raw_introduction"],"name":[1],"type":["chr"],"align":["left"]},{"label":["eventDate"],"name":[2],"type":["chr"],"align":["left"]}],"data":[{"1":"20xx","2":"2000/now"},{"1":"1967","2":"1967/now"},{"1":"1920","2":"1920/now"},{"1":"1992","2":"1992/now"},{"1":"1990","2":"1990/now"},{"1":"2005","2":"2005/now"},{"1":"1975","2":"1975/now"},{"1":"1884","2":"1884/now"},{"1":"2010","2":"2010/now"},{"1":"2016","2":"2016/now"},{"1":"1884","2":"1884/now"},{"1":"1871","2":"1871/now"},{"1":"1885","2":"1885/now"},{"1":"1890","2":"1890/now"},{"1":"2015","2":"2015/now"},{"1":"17th c.","2":"1601/now"},{"1":"1984","2":"1984/now"},{"1":"2010","2":"2010/now"},{"1":"17th c.","2":"1601/now"},{"1":"1984","2":"1984/now"},{"1":"2001","2":"2001/now"},{"1":"1975","2":"1975/now"},{"1":"13th c.","2":"1201/now"},{"1":"2012","2":"2012/now"},{"1":"1980s","2":"1980/now"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["raw_introduction"],"name":[1],"type":["chr"],"align":["left"]},{"label":["eventDate"],"name":[2],"type":["chr"],"align":["left"]}],"data":[{"1":"2001","2":"2001/now"},{"1":"2005","2":"2005/now"},{"1":"20xx","2":"2000/now"},{"1":"1871","2":"1871/now"},{"1":"1984","2":"1984/now"},{"1":"2016","2":"2016/now"},{"1":"17th c.","2":"1601/now"},{"1":"17th c.","2":"1601/now"},{"1":"1980s","2":"1980/now"},{"1":"1967","2":"1967/now"},{"1":"13th c.","2":"1201/now"},{"1":"1975","2":"1975/now"},{"1":"1975","2":"1975/now"},{"1":"1884","2":"1884/now"},{"1":"1885","2":"1885/now"},{"1":"2015","2":"2015/now"},{"1":"2010","2":"2010/now"},{"1":"1884","2":"1884/now"},{"1":"1990","2":"1990/now"},{"1":"1984","2":"1984/now"},{"1":"2012","2":"2012/now"},{"1":"2010","2":"2010/now"},{"1":"1992","2":"1992/now"},{"1":"1890","2":"1890/now"},{"1":"1920","2":"1920/now"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>
@@ -531,14 +463,13 @@ distribution %&lt;&gt;% mutate(start_year = recode(start_year,
 <div id="post-processing-2" class="section level2">
 <h2><span class="header-section-number">5.3</span> Post-processing</h2>
 <p>Remove the original columns:</p>
-<pre class="r"><code>distribution %&lt;&gt;% select(-one_of(raw_colnames), 
-                         -pathway_1, -pathway_2,
+<pre class="r"><code>distribution %&lt;&gt;% select(-one_of(raw_colnames),
                          -start_year, -current_year)</code></pre>
 <p>Preview data:</p>
 <pre class="r"><code>distribution %&gt;% head()</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":["taxonID"],"name":[1],"type":["chr"],"align":["left"]},{"label":["locationID"],"name":[2],"type":["chr"],"align":["left"]},{"label":["locality"],"name":[3],"type":["chr"],"align":["left"]},{"label":["countryCode"],"name":[4],"type":["chr"],"align":["left"]},{"label":["occurrenceStatus"],"name":[5],"type":["chr"],"align":["left"]},{"label":["establishmentMeans"],"name":[6],"type":["chr"],"align":["left"]},{"label":["eventDate"],"name":[7],"type":["chr"],"align":["left"]}],"data":[{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"A","6":"Aquaculture | Ornamental","7":"2000/now"},{"1":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"A","6":"Biological control","7":"1967/now"},{"1":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"N","6":"Ornamental | Aquaculture","7":"1920/now"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"N","6":"Unintentional | Angling/bait fish","7":"1992/now"},{"1":"alien-fishes:taxon:22e0c0833feaf2c7e7267d9893c5b2ed","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"A*","6":"Aquaculture","7":"1990/now"},{"1":"alien-fishes:taxon:35edeae691a00ed23ea01f139e8bfa1f","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"A","6":"Aquaculture | Ornamental","7":"2005/now"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["taxonID"],"name":[1],"type":["chr"],"align":["left"]},{"label":["locationID"],"name":[2],"type":["chr"],"align":["left"]},{"label":["locality"],"name":[3],"type":["chr"],"align":["left"]},{"label":["countryCode"],"name":[4],"type":["chr"],"align":["left"]},{"label":["occurrenceStatus"],"name":[5],"type":["chr"],"align":["left"]},{"label":["eventDate"],"name":[6],"type":["chr"],"align":["left"]}],"data":[{"1":"alien-fishes:taxon:dec8ee68b3fae146c056b4972e3e6b83","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"present","6":"2001/now"},{"1":"alien-fishes:taxon:35edeae691a00ed23ea01f139e8bfa1f","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"present","6":"2005/now"},{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"present","6":"2000/now"},{"1":"alien-fishes:taxon:6e0fcd4097785a262970615380fdd48d","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"present","6":"1871/now"},{"1":"alien-fishes:taxon:c937610f85ea8a74f105724c8f198049","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"present","6":"1984/now"},{"1":"alien-fishes:taxon:69bdf9b7a061aed637c31e075156f71c","2":"ISO_3166-2:BE-VLG","3":"Flemish Region","4":"BE","5":"present","6":"2016/now"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <p>Save to .csv:</p>
@@ -547,7 +478,7 @@ distribution %&lt;&gt;% mutate(start_year = recode(start_year,
 </div>
 <div id="create-description-extension" class="section level1">
 <h1><span class="header-section-number">6</span> Create description extension</h1>
-<p>In the description extension we want to include native range (<code>raw_origin</code>) and pathway (<code>raw_pathway_s</code>) information. We’ll create a separate data frame for both and then combine these with union.</p>
+<p>In the description extension we want to include <strong>native range</strong> (<code>raw_origin</code>) and <strong>pathway</strong> (<code>raw_pathway_s</code>). We’ll create a separate data frame for both and then combine these with union.</p>
 <div id="pre-processing-3" class="section level2">
 <h2><span class="header-section-number">6.1</span> Pre-processing</h2>
 <div id="native-range" class="section level3">
@@ -617,27 +548,76 @@ native_range %&lt;&gt;% rename(description = mapped_value)</code></pre>
 </div>
 <div id="pathway" class="section level3">
 <h3><span class="header-section-number">6.1.2</span> Pathway</h3>
-<p><code>Pathway</code> information was already generated for <code>establishmentMeans</code> in the Distribution Extension and saved in a dataframe <code>pathway</code>:</p>
-<pre class="r"><code>head(pathway)</code></pre>
+<p>Information for <code>pathway</code> can be found in <code>raw_pathway_s</code>, which contains a list of introduction pathways. We’ll separate, clean, map and combine these values.</p>
+<pre class="r"><code>pathway &lt;- raw_data</code></pre>
+<p>First, we create a new column <code>description</code> based on <code>raw_pathway_s</code></p>
+<pre class="r"><code>pathway %&lt;&gt;% mutate(description = raw_pathway_s)</code></pre>
+<p>We separate <code>description</code> in two separte columns:</p>
+<pre class="r"><code>pathway %&lt;&gt;% separate(
+description,
+into = c(&quot;pathway_1&quot;, &quot;pathway_2&quot;),
+sep = &quot;, &quot;,
+remove = TRUE,
+convert = FALSE,
+extra = &quot;merge&quot;,
+fill = &quot;right&quot;
+)</code></pre>
+<p>Gather pathways in a <code>key</code> and <code>value</code> column:</p>
+<pre class="r"><code>pathway %&lt;&gt;% gather(
+key, value,
+pathway_1, pathway_2,
+na.rm = TRUE, # Also removes records for which there is no pathway_1
+convert = FALSE
+)</code></pre>
+<p>Sort on <code>taxonID</code> to see pathways in context for each record:</p>
+<pre class="r"><code>pathway %&lt;&gt;% arrange(raw_taxonID)</code></pre>
+<p>Show unique values:</p>
+<pre class="r"><code>pathway %&gt;%
+distinct(value) %&gt;%
+arrange(value)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":["raw_latin_name"],"name":[1],"type":["chr"],"align":["left"]},{"label":["raw_nederlandse_naam"],"name":[2],"type":["chr"],"align":["left"]},{"label":["raw_common_name"],"name":[3],"type":["chr"],"align":["left"]},{"label":["raw_origin"],"name":[4],"type":["chr"],"align":["left"]},{"label":["raw_introduction"],"name":[5],"type":["chr"],"align":["left"]},{"label":["raw_pathway_s"],"name":[6],"type":["chr"],"align":["left"]},{"label":["raw_status"],"name":[7],"type":["chr"],"align":["left"]},{"label":["raw_main_pathway"],"name":[8],"type":["chr"],"align":["left"]},{"label":["raw_taxonID"],"name":[9],"type":["chr"],"align":["left"]},{"label":["mapped_value"],"name":[10],"type":["chr"],"align":["left"]}],"data":[{"1":"Acipenser ruthenus","2":"Sterlet","3":"Sterlet","4":"EE","5":"20xx","6":"AQ, OR","7":"A","8":"OR","9":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","10":"Aquaculture"},{"1":"Acipenser ruthenus","2":"Sterlet","3":"Sterlet","4":"EE","5":"20xx","6":"AQ, OR","7":"A","8":"OR","9":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","10":"Ornamental"},{"1":"Ctenopharyngodon idella","2":"Graskarper","3":"Grass carp","4":"AS","5":"1967","6":"BC","7":"A","8":"BC","9":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","10":"Biological control"},{"1":"Umbra pygmaea","2":"Amerikaanse hondsvis","3":"Eastern mudminnow","4":"NA","5":"1920","6":"OR, AQ","7":"N","8":"OR","9":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","10":"Ornamental"},{"1":"Umbra pygmaea","2":"Amerikaanse hondsvis","3":"Eastern mudminnow","4":"NA","5":"1920","6":"OR, AQ","7":"N","8":"OR","9":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","10":"Aquaculture"},{"1":"Pseudorasbora parva","2":"Blauwbandgrondel","3":"Topmouth gudgeon","4":"AS","5":"1992","6":"UN, AN","7":"N","8":"UN","9":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","10":"Unintentional"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["value"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"AM"},{"1":"AN"},{"1":"AQ"},{"1":"BC"},{"1":"BW"},{"1":"OR"},{"1":"UN"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
-<p>It contains one record per pathway (with potentially more than one pathway per taxon). First, we change column name <code>mapped_value</code> to description:</p>
+<p>We use the <a href="https://github.com/trias-project/vocab/tree/master/vocabulary">standardized vocabulary</a> suggested for TrIAS to perform the mapping. This vocabulary is based on the <a href="https://www.cbd.int/doc/meetings/sbstta/sbstta-18/official/sbstta-18-09-add1-en.pdf">CBD standard</a>. This is an overview of the abbreviations used in the dataset, their interpretation and the mapping to the CBD standard:</p>
+<pre><code>##   abbreviation full name            CBD mapping                
+## 1 &quot;AM&quot;         &quot;Active Migration&quot;   &quot;corridor_water&quot;           
+## 2 &quot;AN&quot;         &quot;Angling/bait fish&quot;  &quot;escape_food_bait&quot;         
+## 3 &quot;AQ&quot;         &quot;Aquaculture&quot;        &quot;escape_aquaculture&quot;       
+## 4 &quot;BC&quot;         &quot;Biological Control&quot; &quot;release_biologica_control&quot;
+## 5 &quot;BW&quot;         &quot;Ballast Water&quot;      &quot;stowaway_ballast_water&quot;   
+## 6 &quot;OR&quot;         &quot;Ornamental&quot;         &quot;escape_ornamental&quot;        
+## 7 &quot;UN&quot;         &quot;Unintentional&quot;      &quot;Unintentional&quot;</code></pre>
+<pre class="r"><code>pathway %&lt;&gt;% mutate(cbd_standard = recode(value,
+&quot;AM&quot; = &quot;corridor_water&quot;,
+&quot;AN&quot; = &quot;escape_food_bait&quot;,
+&quot;AQ&quot; = &quot;escape_aquaculture&quot;,
+&quot;BC&quot; = &quot;release_biological_control&quot;,
+&quot;BW&quot; = &quot;stowaway_ballast_water&quot;,
+&quot;OR&quot; = &quot;escape_ornamental&quot;,
+&quot;UN&quot; = &quot;unintentional&quot;))</code></pre>
+<p>Add the prefix <code>cbd_2014_pathway:</code>to refer to this standard (but not for <code>unintentional</code>, which does not belong to the standard:</p>
+<pre class="r"><code>pathway %&lt;&gt;% mutate(mapped_value = case_when (
+  cbd_standard != &quot;unintentional&quot; ~ paste(&quot;cbd_2014_pathway:&quot;, cbd_standard),
+  cbd_standard == &quot;unintentional&quot; ~ cbd_standard))</code></pre>
+<p>Show mapped values:</p>
+<pre class="r"><code>pathway %&gt;%
+select(value, mapped_value) %&gt;%
+group_by(value, mapped_value) %&gt;%
+summarize(records = n()) %&gt;%
+arrange(value) </code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["value"],"name":[1],"type":["chr"],"align":["left"]},{"label":["mapped_value"],"name":[2],"type":["chr"],"align":["left"]},{"label":["records"],"name":[3],"type":["int"],"align":["right"]}],"data":[{"1":"AM","2":"cbd_2014_pathway: corridor_water","3":"4"},{"1":"AN","2":"cbd_2014_pathway: escape_food_bait","3":"6"},{"1":"AQ","2":"cbd_2014_pathway: escape_aquaculture","3":"10"},{"1":"BC","2":"cbd_2014_pathway: release_biological_control","3":"3"},{"1":"BW","2":"cbd_2014_pathway: stowaway_ballast_water","3":"3"},{"1":"OR","2":"cbd_2014_pathway: escape_ornamental","3":"7"},{"1":"UN","2":"unintentional","3":"2"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>Drop <code>key</code>, <code>value</code> and <code>cbd_standard</code> column:</p>
+<pre class="r"><code>pathway %&lt;&gt;% select(-key, -value, -cbd_standard)</code></pre>
+<p>Change column name <code>mapped_value</code> to description:</p>
 <pre class="r"><code>pathway %&lt;&gt;%  rename(description = mapped_value)</code></pre>
 <p>Create a <code>type</code> field to indicate the type of description:</p>
 <pre class="r"><code>pathway %&lt;&gt;% mutate(type = &quot;pathway&quot;)</code></pre>
-<p>Show pathway descriptions:</p>
-<pre class="r"><code>pathway %&gt;% 
-  select(description) %&gt;% 
-  group_by(description) %&gt;% 
-  summarize(records = n())</code></pre>
-<div data-pagedtable="false">
-<script data-pagedtable-source type="application/json">
-{"columns":[{"label":["description"],"name":[1],"type":["chr"],"align":["left"]},{"label":["records"],"name":[2],"type":["int"],"align":["right"]}],"data":[{"1":"Active Migration","2":"4"},{"1":"Angling/bait fish","2":"6"},{"1":"Aquaculture","2":"10"},{"1":"Ballast Water","2":"3"},{"1":"Biological control","2":"3"},{"1":"Ornamental","2":"7"},{"1":"Unintentional","2":"2"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
-  </script>
-</div>
 </div>
 <div id="union-native-range-and-pathway" class="section level3">
 <h3><span class="header-section-number">6.1.3</span> Union native range and pathway:</h3>
@@ -677,7 +657,7 @@ native_range %&lt;&gt;% rename(description = mapped_value)</code></pre>
 <pre class="r"><code>head(description_ext, 10)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":["taxonID"],"name":[1],"type":["chr"],"align":["left"]},{"label":["description"],"name":[2],"type":["chr"],"align":["left"]},{"label":["type"],"name":[3],"type":["chr"],"align":["left"]},{"label":["language"],"name":[4],"type":["chr"],"align":["left"]}],"data":[{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"Eastern Europe","3":"native range","4":"en"},{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"Aquaculture","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"Ornamental","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","2":"Asia","3":"native range","4":"en"},{"1":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","2":"Biological control","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","2":"Ornamental","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","2":"Aquaculture","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"Asia","3":"native range","4":"en"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"Unintentional","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"Angling/bait fish","3":"pathway","4":"en"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["taxonID"],"name":[1],"type":["chr"],"align":["left"]},{"label":["description"],"name":[2],"type":["chr"],"align":["left"]},{"label":["type"],"name":[3],"type":["chr"],"align":["left"]},{"label":["language"],"name":[4],"type":["chr"],"align":["left"]}],"data":[{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"Eastern Europe","3":"native range","4":"en"},{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"cbd_2014_pathway: escape_aquaculture","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:078319c97e97d2b50c582b9b9b792bad","2":"cbd_2014_pathway: escape_ornamental","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","2":"Asia","3":"native range","4":"en"},{"1":"alien-fishes:taxon:0b5b04074e4446927e7986999170bf5b","2":"cbd_2014_pathway: release_biological_control","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","2":"cbd_2014_pathway: escape_ornamental","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:0b628dff961ba5fd7acf4499ca4eb922","2":"cbd_2014_pathway: escape_aquaculture","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"Asia","3":"native range","4":"en"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"unintentional","3":"pathway","4":"en"},{"1":"alien-fishes:taxon:1da48686487fe130179a13661ea90545","2":"cbd_2014_pathway: escape_food_bait","3":"pathway","4":"en"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <p>Save to CSV:</p>
