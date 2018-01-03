@@ -62,6 +62,8 @@ dwc_description_file = "../data/processed/description.csv"
 
 # Read data
 
+Create a data frame `raw_data` from the source data:
+
 ```{r}
 # Read the source data:
 raw_data <- read_excel(raw_data_file, sheet = "Checklist", na = "NA") 
@@ -72,15 +74,16 @@ raw_data %<>%
   clean_names()               # Have sensible (lowercase) column names
 ```
 
-We need to integrate the DwC term `taxonID` in each of the generated files (Taxon Core and Extensions).
-For this reason, it is easier to generate `taxonID` in the raw file. 
+## Generate taxonID
+
+To uniquely identify a taxon in the Taxon Core and reference taxa in the Extensions, we need a `taxonID`. Since we need it in all generated files, we generate it here in the raw data frame. It is a combination of `dataset-shortname:taxon:` and a hash based on the scientific name. As long as the scientific name doesn't change, the ID will be stable: 
 
 ```{r}
 # Vectorize the digest function (The digest() function isn't vectorized. So if you pass in a vector, you get one value for the whole vector rather than a digest for each element of the vector):
 vdigest <- Vectorize(digest)
 
 # Generate taxonID:
-raw_data %<>% mutate(taxonID = paste("alien-fishes:taxon:", vdigest (latin_name, algo="md5"), sep=""))
+raw_data %<>% mutate(taxon_id = paste("alien-fishes", "taxon", vdigest(latin_name, algo="md5"), sep=":"))
 ```
 
 Further processing:
