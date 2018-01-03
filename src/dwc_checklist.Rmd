@@ -537,7 +537,7 @@ Add the prefix `cbd_2014_pathway:`to refer to this standard (but not for `uninte
 
 ```{r}
 pathway %<>% mutate(mapped_value = case_when (
-  cbd_standard != "unintentional" ~ paste("cbd_2014_pathway:", cbd_standard),
+  cbd_standard != "unintentional" ~ paste("cbd_2014_pathway:", cbd_standard, sep =""),
   cbd_standard == "unintentional" ~ cbd_standard))
 
 ```
