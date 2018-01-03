@@ -281,7 +281,7 @@ distribution <- raw_data
 ### taxonID
 
 ```{r}
-distribution %<>% mutate(taxonID = raw_taxonID)
+distribution %<>% mutate(taxonID = raw_taxon_id)
 ```
 
 ### locationID
@@ -309,6 +309,13 @@ distribution %<>% mutate(occurrenceStatus = "present")
 ```
 
 ### establishmentMeans
+
+For `establishmentMeans` we follow the [GBIF controlled vocabulary](http://rs.gbif.org/vocabulary/gbif/establishment_means.xml) and just indicate that these species are `introduced` (= alien):
+
+```{r}
+distribution %<>% mutate(establishmentMeans = "introduced")
+```
+
 ### eventDate
 
 eventDate will be of format `start_year`/`current_year` (yyyy/now).
