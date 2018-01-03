@@ -352,7 +352,7 @@ write.csv(distribution, file = dwc_distribution_file, na = "", row.names = FALSE
 
 # Create description extension
 
-In the description extension we want to include **native range** (`raw_origin`) and **pathway** (`raw_pathway_s`). We'll create a separate data frame for both and then combine these with union.
+In the description extension we want to include **native range** (`raw_origin`), **pathway** (`raw_pathway_s`) and **invasion stage** (`raw_status`). We'll create a separate data frame for both and then combine these with union.
 
 ## Pre-processing
 
@@ -570,13 +570,34 @@ Create a `type` field to indicate the type of description:
 pathway %<>% mutate(type = "pathway")
 ```
 
+### Invasion stage
 
-
-
-### Union native range and pathway:
+Information for `invasion stage` can be found in `raw_status`:
 
 ```{r}
-description_ext <- bind_rows(native_range, pathway)
+invasion_stage <- raw_data
+```
+
+We generate `description` in which we recode the information contained in `raw_status`:
+
+```{r}
+invasion_stage %<>% mutate (description = recode(raw_status,
+  "A" = "established",
+  "A*" = "established",
+  "N" = "naturalized"))
+```
+
+Create a `type` field to indicate the type of description:
+
+```{r}
+invasion_stage %<>% mutate(type = "invasion stage")
+```
+
+
+### Union `native range`, `pathway` and `invastion_stage`:
+
+```{r}
+description_ext <- bind_rows(native_range, pathway, invasion_stage)
 ```
 
 ## Term mapping
