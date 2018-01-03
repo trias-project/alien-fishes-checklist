@@ -377,39 +377,31 @@ write.csv(distribution, file = dwc_distribution_file, na = "", row.names = FALSE
 
 # Create Description extension
 
-In the description extension we want to include **native range** (`raw_origin`), **pathway** (`raw_pathway_s`) and **invasion stage** (`raw_status`). We'll create a separate data frame for both and then combine these with union.
+In the description extension we want to include **native range** (`raw_origin`), **pathway** (`raw_pathway_s`) and **invasion stage** (`raw_status`). We'll create separate data frames for all and then combine these with union.
 
-## Pre-processing
+## Native range
 
-### Native range
-
-`raw_origin` contains native range information (e.g. `AS`). We'll separate, map and combine these values.
+`raw_origin` contains native range information (e.g. `AS` for Asia). We'll separate, map and combine these values:
 
 ```{r}
 native_range <- raw_data
 ```
 
-Create `description` from `raw_origin`:
-
-```{r}
-native_range %<>% mutate(description = raw_origin)
-```
-
-Separate `description` on `" or "` in 2 columns:
+Separate `raw_origin` on `" or "` in 2 columns:
 
 ```{r}
 native_range %<>% separate(
-  description,
+  raw_origin,
   into = c("native_range_1", "native_range_2"),
   sep = " or ",
-  remove = TRUE,
+  remove = FALSE,
   convert = FALSE,
   extra = "merge",
   fill = "right"
 )
 ```
 
-Gather native ranges in a key and value column:
+Gather native ranges in a `key` and `value` column:
 
 ```{r}
 native_range %<>% gather(
@@ -418,12 +410,6 @@ native_range %<>% gather(
   na.rm = TRUE, # Also removes records for which there is no native_range_1
   convert = FALSE
 )
-```
-
-Sort on `taxonID` to see pathways in context for each record:
-
-```{r}
-native_range %<>% arrange(raw_taxonID)
 ```
 
 Show values:
@@ -440,9 +426,9 @@ Map values:
 
 ```{r}
 native_range %<>% mutate(mapped_value = recode(value,
-      "AS" = "Asia",
-      "EE" = "Eastern Europe",
-      "AFR" = "Africa"))
+  "AS" = "Asia",
+  "EE" = "Eastern Europe",
+  "AFR" = "Africa"))
 ```
 
 Show mapped values:
@@ -455,51 +441,39 @@ native_range %>%
   arrange(value) 
 ```
 
-Drop `key` and `value` column and rename mapped value:
+Drop the `key` and `value` columns and rename `mapped_value` as `description`:
 
 ```{r}
-native_range %<>% select(-key, -value)
-native_range %<>% rename(description = mapped_value)
+native_range %<>%
+  select(-key, -value) %>%
+  rename(description = mapped_value)
 ```
 
-Create a type field to indicate the type of description:
+Create a `type` field to indicate the type of description:
 
 ```{r}
 native_range %<>% mutate(type = "native range")
 ```
 
-Preview data:
+## Pathway
 
-```{r}
-head(native_range)
-```
-
-
-### Pathway
-
-Information for `pathway` can be found in `raw_pathway_s`, which contains a list of introduction pathways. We'll separate, clean, map and combine these values.  
+Information for `pathway` can be found in `raw_pathway_s`, which contains a list of introduction pathways. We'll separate, clean, map and combine these values:
 
 ```{r}
 pathway <- raw_data
 ```
 
-First, we create a new column `description` based on `raw_pathway_s`
-
-```{r}
-pathway %<>% mutate(description = raw_pathway_s)
-```
-
-We separate `description` in two separte columns:
+We separate `raw_pathway_s` in two separate columns:
 
 ```{r}
 pathway %<>% separate(
-description,
-into = c("pathway_1", "pathway_2"),
-sep = ", ",
-remove = TRUE,
-convert = FALSE,
-extra = "merge",
-fill = "right"
+  raw_pathway_s,
+  into = c("pathway_1", "pathway_2"),
+  sep = ", ",
+  remove = FALSE,
+  convert = FALSE,
+  extra = "merge",
+  fill = "right"
 )
 ```
 
@@ -507,29 +481,22 @@ Gather pathways in a `key` and `value` column:
 
 ```{r}
 pathway %<>% gather(
-key, value,
-pathway_1, pathway_2,
-na.rm = TRUE, # Also removes records for which there is no pathway_1
-convert = FALSE
+  key, value,
+  pathway_1, pathway_2,
+  na.rm = TRUE, # Also removes records for which there is no pathway_1
+  convert = FALSE
 )
-
-```
-
-Sort on `taxonID` to see pathways in context for each record:
-
-```{r}
-pathway %<>% arrange(raw_taxonID)
 ```
 
 Show unique values:
 
 ```{r}
 pathway %>%
-distinct(value) %>%
-arrange(value)
+  distinct(value) %>%
+  arrange(value)
 ```
 
-We use the [standardized vocabulary](https://github.com/trias-project/vocab/tree/master/vocabulary) suggested for TrIAS to perform the mapping. This vocabulary is based on the [CBD standard](https://www.cbd.int/doc/meetings/sbstta/sbstta-18/official/sbstta-18-09-add1-en.pdf). This is an overview of the abbreviations used in the dataset, their interpretation and the mapping to the CBD standard:
+We use the [standardized vocabulary](https://github.com/trias-project/vocab/tree/master/vocabulary) suggested for TrIAS to perform the mapping. This vocabulary is based on the [CBD standard](https://www.cbd.int/doc/meetings/sbstta/sbstta-18/official/sbstta-18-09-add1-en.pdf). This is a manually created overview of the abbreviations used in the dataset, their interpretation and the mapping to the CBD standard:
 
 ```{r, echo = F}
 as.data.frame(matrix(data = c(
@@ -545,48 +512,44 @@ as.data.frame(matrix(data = c(
   byrow = T))
 ```
 
-Map the abbreviations to CBD standard:
+Map the abbreviations to the CBD standard:
 
 ```{r}
-pathway %<>% mutate(cbd_standard = recode(value,
-"AM" = "corridor_water",
-"AN" = "escape_food_bait",
-"AQ" = "escape_aquaculture",
-"BC" = "release_biological_control",
-"BW" = "stowaway_ballast_water",
-"OR" = "escape_ornamental",
-"UN" = "unintentional"))
+pathway %<>% mutate(mapped_value = recode(value,
+  "AM" = "corridor_water",
+  "AN" = "escape_food_bait",
+  "AQ" = "escape_aquaculture",
+  "BC" = "release_biological_control",
+  "BW" = "stowaway_ballast_water",
+  "OR" = "escape_ornamental",
+  "UN" = "unintentional" # Not part of CBD
+))
 ```
 
-Add the prefix `cbd_2014_pathway:`to refer to this standard (but not for `unintentional`, which has no alternative in the standard:
+Add the prefix `cbd_2014_pathway:` to refer to this standard (but not for `unintentional`, which has no alternative in the standard):
 
 ```{r}
 pathway %<>% mutate(mapped_value = case_when (
-  cbd_standard != "unintentional" ~ paste("cbd_2014_pathway:", cbd_standard, sep =""),
-  cbd_standard == "unintentional" ~ cbd_standard))
-
+  mapped_value != "unintentional" ~ paste("cbd_2014_pathway", mapped_value, sep = ":"),
+  mapped_value == "unintentional" ~ mapped_value))
 ```
 
 Show mapped values:
 
 ```{r}
 pathway %>%
-select(value, mapped_value) %>%
-group_by(value, mapped_value) %>%
-summarize(records = n()) %>%
-arrange(value) 
+  select(value, mapped_value) %>%
+  group_by(value, mapped_value) %>%
+  summarize(records = n()) %>%
+  arrange(value) 
 ```
 
-Drop `key`, `value` and `cbd_standard` column:
+Drop the `key` and `value` columns and rename `mapped_value` as `description`:
 
 ```{r}
-pathway %<>% select(-key, -value, -cbd_standard)
-```
-
-Change column name `mapped_value` to description:
-
-```{r}
-pathway %<>%  rename(description = mapped_value)
+pathway %<>%
+  select(-key, -value) %>%
+  rename(description = mapped_value)
 ```
 
 Create a `type` field to indicate the type of description:
@@ -595,7 +558,7 @@ Create a `type` field to indicate the type of description:
 pathway %<>% mutate(type = "pathway")
 ```
 
-### Invasion stage
+## Invasion stage
 
 Information for `invasion stage` can be found in `raw_status`:
 
@@ -603,13 +566,14 @@ Information for `invasion stage` can be found in `raw_status`:
 invasion_stage <- raw_data
 ```
 
-We generate `description` in which we recode the information contained in `raw_status`:
+Recode values:
 
 ```{r}
-invasion_stage %<>% mutate (description = recode(raw_status,
+invasion_stage %<>% mutate(description = recode(raw_status,
   "A" = "established",
   "A*" = "established",
-  "N" = "naturalized"))
+  "N" = "naturalized"
+))
 ```
 
 Create a `type` field to indicate the type of description:
@@ -618,8 +582,7 @@ Create a `type` field to indicate the type of description:
 invasion_stage %<>% mutate(type = "invasion stage")
 ```
 
-
-### Union `native range`, `pathway` and `invastion_stage`:
+## Union native range, pathway and invastion_stage:
 
 ```{r}
 description_ext <- bind_rows(native_range, pathway, invasion_stage)
@@ -627,12 +590,12 @@ description_ext <- bind_rows(native_range, pathway, invasion_stage)
 
 ## Term mapping
 
-Map the source data to [Taxon Description](http://rs.gbif.org/extension/gbif/1.0/description.xml)
+Map the source data to [Taxon Description](http://rs.gbif.org/extension/gbif/1.0/description.xml):
 
 ### taxonID
 
 ```{r}
-description_ext %<>% mutate(taxonID = raw_taxonID)
+description_ext %<>% mutate(taxonID = raw_taxon_id)
 ```
 
 ### description
@@ -668,7 +631,7 @@ Move `taxonID` to the first position:
 description_ext %<>% select(taxonID, everything())
 ```
 
-Sort on `taxonID`:
+Sort on `taxonID` to group description information per taxon:
 
 ```{r}
 description_ext %<>% arrange(taxonID)
