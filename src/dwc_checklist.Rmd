@@ -218,24 +218,23 @@ Map the source data to [Vernacular Names](http://rs.gbif.org/extension/gbif/1.0/
 ### taxonID
 
 ```{r}
-vernacular_names %<>% mutate(taxonID = raw_taxonID)
+vernacular_names %<>% mutate(taxonID = raw_taxon_id)
 ```
 
 ### vernacularName
 
-Vernacular names are available in two languages: English (`raw_common_name`) and Dutch (`raw_nederlandse_naam`). We will create two new columns `English` en `Dutch`, containing their respective vernacular names. We will then gather() these columns to generate a column containing all vernacularnames, linked with one column refering to the specific language.
+Vernacular names are available in two languages: English (`raw_common_name`) and Dutch (`raw_nederlandse_naam`). We will gather these columns to generate a single column containing the vernacular name (`vernacularName`) and an additional column with the language (`language`):
 
 ```{r}
-# Create two new columns `English`and `Dutch`:
-vernacular_names %<>% 
-  mutate(English = raw_common_name) %<>%
-  mutate(Dutch = raw_nederlandse_naam)
+vernacular_names %<>%
+  gather(key = language, value = vernacularName, raw_common_name, raw_nederlandse_naam, na.rm = TRUE, convert = TRUE) %>%
+  select(-language, everything()) # Move language column to end
+```
 
-# Gather these columns to generate `vernaculername`and `language`
-vernacular_names %<>% gather(key, value, Dutch, English, na.rm = TRUE, convert = TRUE) %<>% 
-  arrange(taxonID) %<>% # sort on taxonID
-  select(raw_colnames, taxonID, value, key) %<>% # rearrange
-  rename(vernacularNames = value) # rename
+Sort on `taxonID` to keep information for a single taxon together:
+
+```{r}
+vernacular_names %<>% arrange(taxonID)
 ```
 
 ### language
