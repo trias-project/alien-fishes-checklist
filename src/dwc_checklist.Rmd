@@ -268,7 +268,7 @@ Save to CSV:
 write.csv(vernacular_names, file = dwc_vernacular_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
 ```
 
-# Create Distribution Extension
+# Create Distribution extension
   
 ## Pre-processing
 
@@ -574,6 +574,16 @@ invasion_stage %<>% mutate(description = recode(raw_status,
   "A*" = "established",
   "N" = "naturalized"
 ))
+```
+
+Show mapped values:
+
+```{r}
+invasion_stage %>%
+  select(raw_status, description) %>%
+  group_by(raw_status, description) %>%
+  summarize(records = n()) %>%
+  arrange(raw_status) 
 ```
 
 Create a `type` field to indicate the type of description:
