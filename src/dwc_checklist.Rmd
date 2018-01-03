@@ -239,10 +239,13 @@ vernacular_names %<>% arrange(taxonID)
 
 ### language
 
-The column `key` generated for `vernacularNames` contains the information for `language`
+This column currently contains the original column name, which we will recode to the ISO 639-1 language code:
 
 ```{r}
-vernacular_names %<>% rename (language = key)
+vernacular_names %<>% mutate(language = recode(language,
+  "raw_common_name" = "en",
+  "raw_nederlandse_naam" = "nl"
+))
 ```
 
 ## Post-processing:
