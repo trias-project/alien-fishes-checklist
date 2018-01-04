@@ -1,0 +1,33 @@
+# Dataset: alien-fishes
+# DOI: 
+# 
+# Scope: http://rs.gbif.org/extension/gbif/1.0/distribution.xml
+# Author: Peter Desmet
+# Syntax version: 0.1
+
+taxonID:
+  regex: 'alien-fishes:taxon:[a-z0-9]+'
+
+locationID:
+  allowed: ISO_3166-2:BE-VLG
+
+locality:
+  allowed: Flemish Region
+
+countryCode:
+  allowed: BE
+
+occurrenceStatus:
+  allowed: present
+
+establishmentMeans:
+  allowed: introduced
+
+eventDate:
+  delimitedvalues:
+    delimiter: /
+    type: integer
+    min: 1600
+    max: 2017 # Will fail for "now", not sure how to solve this
+
+# source:

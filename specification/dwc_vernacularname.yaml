@@ -1,0 +1,17 @@
+# Dataset: alien-fishes
+# DOI: 
+# 
+# Scope: http://rs.gbif.org/extension/gbif/1.0/vernacularname.xml
+# Author: Peter Desmet
+# Syntax version: 0.1
+
+taxonID:
+  regex: 'alien-fishes:taxon:[a-z0-9]+'
+
+vernacularName:
+  empty: false
+
+language:
+  allowed: [en, nl]
+
+# source:

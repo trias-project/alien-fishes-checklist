@@ -1,0 +1,39 @@
+# Dataset: alien-fishes
+# DOI: 
+# 
+# Scope: http://rs.gbif.org/core/dwc_taxon_2015-04-24.xml
+# Author: Peter Desmet
+# Syntax version: 0.1
+
+language:
+  allowed: en
+
+license:
+  allowed: http://creativecommons.org/publicdomain/zero/1.0/
+
+rightsHolder:
+  allowed: INBO
+
+accessRights:
+  allowed: http://www.inbo.be/en/norms-for-data-use
+
+datasetID:
+  allowed: ""
+
+datasetName:
+  allowed: Checklist of alien fishes in Flanders, Belgium
+
+taxonID:
+  regex: 'alien-fishes:taxon:[a-z0-9]+'
+
+scientificName:
+  empty: false
+
+kingdom:
+  allowed: Animalia
+
+taxonRank:
+  allowed: species
+
+nomenclaturalCode:
+  allowed: ICZN
