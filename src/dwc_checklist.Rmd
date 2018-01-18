@@ -567,30 +567,25 @@ pathway %<>% mutate(type = "pathway")
 
 ## Invasion stage
 
-Information for `invasion stage` can be found in `raw_status`:
-
 ```{r}
 invasion_stage <- raw_data
 ```
 
-Recode values:
-
-```{r}
-invasion_stage %<>% mutate(description = recode(raw_status,
-  "A" = "established",
-  "A*" = "established",
-  "N" = "naturalized"
-))
-```
-
-Show mapped values:
+Information for `invasion stage` can be found in `raw_status`. This contains the following information:
 
 ```{r}
 invasion_stage %>%
-  select(raw_status, description) %>%
-  group_by(raw_status, description) %>%
-  summarize(records = n()) %>%
-  arrange(raw_status) 
+  select(raw_status) %>%
+  group_by(raw_status) %>%
+  summarize(records = n())
+```
+
+Both `A` and `A*` stand for `establiblished`, `N` refers to `naturalized`.
+However, for the TrIAS project, we decided to use the unified framework for biological invasions of [Blackburn et al. 2011](http://doc.rero.ch/record/24725/files/bach_puf.pdf), but we discard the terms `naturalized`(because often, there's no sensible criterium to distinguish between casual/naturalised of naturalised/established), and `invasive` (this is a label that should only be put on a species after risk assessment). Thus, here, we conider all species as `established`.
+
+
+```{r}
+invasion_stage %<>% mutate(description = "established")
 ```
 
 Create a `type` field to indicate the type of description:
