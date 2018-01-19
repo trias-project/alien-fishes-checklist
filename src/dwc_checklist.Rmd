@@ -581,7 +581,7 @@ invasion_stage %>%
 ```
 
 Both `A` and `A*` stand for `establiblished`, `N` refers to `naturalized`.
-However, for the TrIAS project, we decided to use the unified framework for biological invasions of [Blackburn et al. 2011](http://doc.rero.ch/record/24725/files/bach_puf.pdf), but we discard the terms `naturalized`(because often, there's no sensible criterium to distinguish between casual/naturalised of naturalised/established), and `invasive` (this is a label that should only be put on a species after risk assessment). Thus, here, we conider all species as `established`.
+However, for the TrIAS project, we decided to use the unified framework for biological invasions of [Blackburn et al. 2011](http://doc.rero.ch/record/24725/files/bach_puf.pdf), but we discard the terms `naturalized`(because often, there's no sensible criterium to distinguish between casual/naturalised of naturalised/established), and `invasive` (this is a label that should only be put on a species after risk assessment). Thus, here, we consider all species as `established`.
 
 
 ```{r}
