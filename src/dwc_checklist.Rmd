@@ -325,7 +325,7 @@ distribution %<>% mutate(establishmentMeans = "introduced")
 
 ### eventDate
 
-The `eventDate` will be of the format `start_year`/`end_year` (`yyyy/yyyy`). The `start_year` will contain the information from the first observation (`raw_introduction`). For the `end_year`, we have to assume when the presence of the species was last verified (even though all species are considered established). We will use the publication year of the Verreycken et al. 2018.
+Distributions will have a start and end year, expressed in `eventDate` as ISO 8601 `yyyy/yyyy` (`start_year`/`end_year`). The `start_year` will contain the information from the first observation (`raw_introduction`). For the `end_year`, we have to assume when the presence of the species was last verified (even though all species are considered established). We will use the publication year of the Verreycken et al. 2018.
 
 First, we create `start_year` from `raw_introduction`:
 
