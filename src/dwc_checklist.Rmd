@@ -595,7 +595,7 @@ Create a `type` field to indicate the type of description:
 invasion_stage %<>% mutate(type = "invasion stage")
 ```
 
-## Union native range, pathway and invastion_stage:
+## Union native range, pathway and invasion stage:
 
 ```{r}
 description_ext <- bind_rows(native_range, pathway, invasion_stage)
