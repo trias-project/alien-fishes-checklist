@@ -13,7 +13,7 @@
 <meta name="author" content="Dimitri Brosens" />
 <meta name="author" content="Peter Desmet" />
 
-<meta name="date" content="2018-01-23" />
+<meta name="date" content="2018-02-01" />
 
 <title>Darwin Core mapping</title>
 
@@ -224,7 +224,7 @@ div.tocify {
 <h4 class="author"><em>Lien Reyserhove</em></h4>
 <h4 class="author"><em>Dimitri Brosens</em></h4>
 <h4 class="author"><em>Peter Desmet</em></h4>
-<h4 class="date"><em>2018-01-23</em></h4>
+<h4 class="date"><em>2018-02-01</em></h4>
 
 </div>
 
@@ -447,7 +447,7 @@ raw_colnames &lt;- colnames(raw_data)</code></pre>
 </div>
 <div id="eventdate" class="section level3">
 <h3><span class="header-section-number">5.2.7</span> eventDate</h3>
-<p><code>eventDate</code> will be of the format <code>start_year</code> / <code>end_year</code> (yyyy/yyyy). <code>start_year</code>(yyyy) will contain the information from the first observation (<code>raw_introduction</code>). For the <code>end_year</code>, we have to assume when the presence of the species was last verified. We will use the publication year of the paper (<code>2018</code>).</p>
+<p>Distributions will have a start and end year, expressed in <code>eventDate</code> as ISO 8601 <code>yyyy/yyyy</code> (<code>start_year</code>/<code>end_year</code>). The <code>start_year</code> will contain the information from the first observation (<code>raw_introduction</code>). For the <code>end_year</code>, we have to assume when the presence of the species was last verified (even though all species are considered established). We will use the publication year of the Verreycken et al. 2018.</p>
 <p>First, we create <code>start_year</code> from <code>raw_introduction</code>:</p>
 <pre class="r"><code>distribution %&lt;&gt;% mutate(start_year = raw_introduction)</code></pre>
 <p>Some <code>start_year</code> values are quite broad. We change these values to the first year for which an observation is plausible:</p>

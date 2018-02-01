@@ -83,7 +83,7 @@ To uniquely identify a taxon in the Taxon Core and reference taxa in the Extensi
 vdigest <- Vectorize(digest)
 
 # Generate taxonID:
-raw_data %<>% mutate(taxon_id = paste("alien-fishes", "taxon", vdigest(latin_name, algo="md5"), sep=":"))
+raw_data %<>% mutate(taxon_id = paste("alien-fishes-checklist", "taxon", vdigest(latin_name, algo="md5"), sep=":"))
 ```
 
 Further processing:
@@ -582,13 +582,13 @@ invasion_stage %>%
   summarize(records = n())
 ```
 
-Both `A` and `A*` stand for `established`, even for species (like Nile tilapia) in secluded warmer water of power plants. `N` refers to `naturalized`.
-
-However, for the TrIAS project, we decided to use the unified framework for biological invasions of [Blackburn et al. 2011](http://doc.rero.ch/record/24725/files/bach_puf.pdf), but we discard the terms `naturalized` (because often, there's no sensible criterium to distinguish between casual/naturalised of naturalised/established) and `invasive` (this is a label that should only be put on a species after risk assessment). Thus, here, we consider all species as `established`.
+In the raw data file, both `A` and `A*` stand for `acclimatized`, even for species (like Nile tilapia) in secluded warmer water of power plants. `N` refers to `naturalized`. For the TrIAS project, we decided to use the vocabulary for `invasion stage` contained in the unified framework for biological invasions of [Blackburn et al. 2011](http://doc.rero.ch/record/24725/files/bach_puf.pdf). `Acclimatized` in the raw data file refers to the status where the alien species has overcome the geographical barrier, the captivity/cultivation barrier and the survival barier, but where it fails to establish because individuals in the population fail to reproduce. In Blackburn et al. (2011), this corresponds to the term `casual`. We discard the term `naturalized` used in the raw data file, because often, there's no sensible criterium to distinguish between casual/naturalised of naturalised/established. Thus, here, we consider all `naturalized` species to be `established`.
 
 
 ```{r}
-invasion_stage %<>% mutate(description = "established")
+invasion_stage %<>% mutate(description = case_when(
+  raw_status != "N" ~ "casual",
+  raw_status == "N" ~ "established"))
 ```
 
 Create a `type` field to indicate the type of description:
