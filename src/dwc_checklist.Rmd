@@ -3,7 +3,6 @@ title: "Darwin Core mapping"
 subtitle: "For dataset: Checklist of alien fishes in Flanders, Belgium"
 author:
 - Lien Reyserhove
-- Dimitri Brosens
 - Peter Desmet
 date: "`r Sys.Date()`"
 output:
@@ -14,7 +13,7 @@ output:
     number_sections: true
     theme: yeti
     df_print: paged
-knit: (function(input_file, encoding) { rmarkdown::render(input_file, encoding = enstqcoding, output_file = paste0("../docs/",sub(".Rmd", ".html", basename(input_file))))})
+knit: (function(input_file, encoding) { rmarkdown::render(input_file, encoding = encoding, output_file = paste0("../docs/",sub(".Rmd", ".html", basename(input_file))))})
 ---
 
 This document describes how we map the checklist data to Darwin Core.
@@ -83,7 +82,7 @@ To uniquely identify a taxon in the Taxon Core and reference taxa in the Extensi
 vdigest <- Vectorize(digest)
 
 # Generate taxonID:
-raw_data %<>% mutate(taxon_id = paste("alien-fishes", "taxon", vdigest(latin_name, algo="md5"), sep=":"))
+raw_data %<>% mutate(taxon_id = paste("alien-fishes-checklist", "taxon", vdigest(latin_name, algo="md5"), sep=":"))
 ```
 
 Further processing:
@@ -582,13 +581,17 @@ invasion_stage %>%
   summarize(records = n())
 ```
 
-Both `A` and `A*` stand for `established`, even for species (like Nile tilapia) in secluded warmer water of power plants. `N` refers to `naturalized`.
+For the TrIAS project, we decided to map this information to the vocabulary for `invasion stage` contained in the unified framework for biological invasions of [Blackburn et al. 2011](http://doc.rero.ch/record/24725/files/bach_puf.pdf):
 
-However, for the TrIAS project, we decided to use the unified framework for biological invasions of [Blackburn et al. 2011](http://doc.rero.ch/record/24725/files/bach_puf.pdf), but we discard the terms `naturalized` (because often, there's no sensible criterium to distinguish between casual/naturalised of naturalised/established) and `invasive` (this is a label that should only be put on a species after risk assessment). Thus, here, we consider all species as `established`.
-
+* `A` and `A*` in the raw data file stand for `acclimatized` and refers to the status where the alien species has overcome the geographical barrier, the captivity/cultivation barrier and the survival barier, but where it fails to establish because individuals in the population fail to reproduce. This includes species (like  Nile tilapia) in secluded warmer water of power plants. In Blackburn et al. (2011), this corresponds to the term `casual`.
+* `N` in the raw data file stands for `naturalized`. We discard this term, because often, there's no sensible criterium to distinguish between casual/naturalised and naturalised/established. Thus, here, we consider all `naturalized` species to be `established`.
 
 ```{r}
-invasion_stage %<>% mutate(description = "established")
+invasion_stage %<>% mutate(description = case_when(
+  raw_status == "A" ~ "casual",
+  raw_status == "A*" ~ "casual",
+  raw_status == "N" ~ "established"
+))
 ```
 
 Create a `type` field to indicate the type of description:
