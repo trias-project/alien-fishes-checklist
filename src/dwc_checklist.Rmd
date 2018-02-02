@@ -582,13 +582,17 @@ invasion_stage %>%
   summarize(records = n())
 ```
 
-In the raw data file, both `A` and `A*` stand for `acclimatized`, even for species (like Nile tilapia) in secluded warmer water of power plants. `N` refers to `naturalized`. For the TrIAS project, we decided to use the vocabulary for `invasion stage` contained in the unified framework for biological invasions of [Blackburn et al. 2011](http://doc.rero.ch/record/24725/files/bach_puf.pdf). `Acclimatized` in the raw data file refers to the status where the alien species has overcome the geographical barrier, the captivity/cultivation barrier and the survival barier, but where it fails to establish because individuals in the population fail to reproduce. In Blackburn et al. (2011), this corresponds to the term `casual`. We discard the term `naturalized` used in the raw data file, because often, there's no sensible criterium to distinguish between casual/naturalised of naturalised/established. Thus, here, we consider all `naturalized` species to be `established`.
+For the TrIAS project, we decided to map this information to the vocabulary for `invasion stage` contained in the unified framework for biological invasions of [Blackburn et al. 2011](http://doc.rero.ch/record/24725/files/bach_puf.pdf):
 
+* `A` and `A*` in the raw data file stand for `acclimatized` and refers to the status where the alien species has overcome the geographical barrier, the captivity/cultivation barrier and the survival barier, but where it fails to establish because individuals in the population fail to reproduce. This includes species (like  Nile tilapia) in secluded warmer water of power plants. In Blackburn et al. (2011), this corresponds to the term `casual`.
+* `N` in the raw data file stands for `naturalized`. We discard this term, because often, there's no sensible criterium to distinguish between casual/naturalised and naturalised/established. Thus, here, we consider all `naturalized` species to be `established`.
 
 ```{r}
 invasion_stage %<>% mutate(description = case_when(
-  raw_status != "N" ~ "casual",
-  raw_status == "N" ~ "established"))
+  raw_status == "A" ~ "casual",
+  raw_status == "A*" ~ "casual",
+  raw_status == "N" ~ "established"
+))
 ```
 
 Create a `type` field to indicate the type of description:
