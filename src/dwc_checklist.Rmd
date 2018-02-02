@@ -3,7 +3,6 @@ title: "Darwin Core mapping"
 subtitle: "For dataset: Checklist of alien fishes in Flanders, Belgium"
 author:
 - Lien Reyserhove
-- Dimitri Brosens
 - Peter Desmet
 date: "`r Sys.Date()`"
 output:
