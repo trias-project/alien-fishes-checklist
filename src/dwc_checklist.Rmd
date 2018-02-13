@@ -1,6 +1,6 @@
 ---
 title: "Darwin Core mapping"
-subtitle: "For dataset: Checklist of alien fishes in Flanders, Belgium"
+subtitle: "For dataset: Checklist of non-native freshwater fishes in Flanders, Belgium"
 author:
 - Lien Reyserhove
 - Peter Desmet
@@ -147,7 +147,7 @@ taxon %<>% mutate(datasetID = "https://doi.org/10.15468/xvuzfh")
 ### datasetName
 
 ```{r}
-taxon %<>% mutate(datasetName = "Checklist of alien fishes in Flanders, Belgium")
+taxon %<>% mutate(datasetName = "Checklist of non-native freshwater fishes in Flanders, Belgium")
 ```
 
 ### taxonID
