@@ -4,19 +4,11 @@
 
 This repository contains the functionality to standardize the _Checklist of non-native freshwater fishes in Flanders, Belgium_ (Verreycken et al. 2018) to a [Darwin Core checklist](https://www.gbif.org/dataset-classes) that can be harvested by [GBIF](http://www.gbif.org). It was developed for the [TrIAS project](http://trias-project.be).
 
-## Results
+## Workflow
 
-### Data
+[source data](data/raw) → Darwin Core [mapping script](http://trias-project.github.io/alien-fishes-checklist/dwc_checklist.html) → generated [Darwin Core files](data/processed)
 
-* [Source data](data/raw)
-* Generated [Darwin Core files](data/processed)
-
-### Mapping to Darwin Core
-
-* Description of the [Darwin Core mapping](http://trias-project.github.io/alien-fishes) (= a rendition of the [mapping script](src/dwc_checklist.Rmd))
-* [Data specifications](specification) for the Darwin Core files
-
-### Published dataset
+## Published dataset
 
 * [Dataset on the IPT](https://ipt.inbo.be/resource?r=alien-fishes-checklist)
 * [Dataset on GBIF](https://doi.org/10.15468/xvuzfh)
