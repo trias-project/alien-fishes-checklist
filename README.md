@@ -8,8 +8,8 @@ This repository contains the functionality to standardize the _Checklist of non-
 
 ### Data
 
-* Input: [source data](data/raw)
-* Output: generated [Darwin Core files](data/processed)
+* [Source data](data/raw)
+* Generated [Darwin Core files](data/processed)
 
 ### Mapping to Darwin Core
 
@@ -42,3 +42,16 @@ The repository structure is based on [Cookiecutter Data Science](http://drivenda
     ├── dwc_checklist.Rmd   : Darwin Core mapping script, core functionality of this repository
     └── src.Rproj          : RStudio project file
 ```
+
+## Installation
+
+See the installation section of [alien-plants-belgium](https://github.com/trias-project/alien-plants-belgium/blob/master/README.md#installation).
+
+## Contributors
+
+[List of contributors](https://github.com/trias-project/alien-fishes-checklist/contributors)
+
+## License
+
+[MIT License](LICENSE)
+
