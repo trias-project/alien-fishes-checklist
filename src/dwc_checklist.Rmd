@@ -1,6 +1,6 @@
 ---
 title: "Darwin Core mapping"
-subtitle: "For dataset: Checklist of alien fishes in Flanders, Belgium"
+subtitle: "For dataset: Checklist of non-native freshwater fishes in Flanders, Belgium"
 author:
 - Lien Reyserhove
 - Peter Desmet
@@ -16,7 +16,7 @@ output:
 knit: (function(input_file, encoding) { rmarkdown::render(input_file, encoding = encoding, output_file = paste0("../docs/",sub(".Rmd", ".html", basename(input_file))))})
 ---
 
-This document describes how we map the checklist data to Darwin Core.
+This document describes how we map the checklist data to Darwin Core. The source file for this document can be found [here](https://github.com/trias-project/alien-fishes-checklist/blob/master/src/dwc_checklist.Rmd).
 
 # Setup
 
@@ -147,7 +147,7 @@ taxon %<>% mutate(datasetID = "https://doi.org/10.15468/xvuzfh")
 ### datasetName
 
 ```{r}
-taxon %<>% mutate(datasetName = "Checklist of alien fishes in Flanders, Belgium")
+taxon %<>% mutate(datasetName = "Checklist of non-native freshwater fishes in Flanders, Belgium")
 ```
 
 ### taxonID
