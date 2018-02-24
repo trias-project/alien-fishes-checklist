@@ -14,3 +14,4 @@ output:
   html_document:
     theme: yeti
     df_print: paged
+    css: "static/css/trias.css"
