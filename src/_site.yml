@@ -1,0 +1,16 @@
+name: "Checklist of non-native freshwater fishes in Flanders, Belgium"
+output_dir: "../docs"
+include: ["static/"]
+navbar:
+  title: "alien-fishes-checklist"
+  left:
+    - text: "Darwin Core mapping"
+      href: dwc_checklist.html
+  right:
+    - icon: fa-github fa-lg
+      href: https://github.com/trias-project/alien-fishes-checklist
+
+output:
+  html_document:
+    theme: yeti
+    df_print: paged
