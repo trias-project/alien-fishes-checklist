@@ -6,7 +6,7 @@ This repository contains the functionality to standardize the _Checklist of non-
 
 ## Workflow
 
-[source data](data/raw) → Darwin Core [mapping script](http://trias-project.github.io/alien-fishes-checklist/dwc_checklist.html) → generated [Darwin Core files](data/processed)
+[source data](https://github.com/trias-project/alien-fishes-checklist/blob/master/data/raw) → Darwin Core [mapping script](http://trias-project.github.io/alien-fishes-checklist/dwc_checklist.html) → generated [Darwin Core files](https://github.com/trias-project/alien-fishes-checklist/blob/master/data/processed)
 
 ## Published dataset
 
@@ -18,7 +18,7 @@ This repository contains the functionality to standardize the _Checklist of non-
 The repository structure is based on [Cookiecutter Data Science](http://drivendata.github.io/cookiecutter-data-science/). Files indicated with `GENERATED` should not be edited manually.
 
 ```
-├── README.md         : Top-level description of the project and how to run it
+├── README.md         : Top-level description of the project
 ├── LICENSE           : Project license
 ├── .gitignore        : Files and folders to be ignored by git
 │
@@ -26,13 +26,13 @@ The repository structure is based on [Cookiecutter Data Science](http://drivenda
 │   ├── raw           : Source data, input for mapping script
 │   └── processed     : Darwin Core output of mapping script GENERATED
 │
-├── docs              : Code for one-page website GENERATED
+├── docs              : Code for documentation website GENERATED
 │
 ├── specifications    : Data specifications for the Darwin Core files
 │
 └── src
-    ├── dwc_checklist.Rmd   : Darwin Core mapping script, core functionality of this repository
-    └── src.Rproj          : RStudio project file
+    ├── dwc_checklist.Rmd : Darwin Core mapping script, core functionality of this repository
+    └── src.Rproj         : RStudio project file
 ```
 
 ## Installation
@@ -45,5 +45,4 @@ See the installation section of [alien-plants-belgium](https://github.com/trias-
 
 ## License
 
-[MIT License](LICENSE)
-
+[MIT License](https://github.com/trias-project/alien-fishes-checklist/blob/master/LICENSE)
