@@ -5,11 +5,10 @@ navbar:
   title: "alien-fishes-checklist"
   left:
     - text: "Darwin Core mapping"
-      href: dwc_checklist.html
+      href: dwc_mapping.html
   right:
     - icon: fa-github fa-lg
       href: https://github.com/trias-project/alien-fishes-checklist
-
 output:
   html_document:
     theme: yeti
