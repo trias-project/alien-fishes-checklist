@@ -6,7 +6,7 @@ This repository contains the functionality to standardize the _Checklist of non-
 
 ## Workflow
 
-[source data](https://github.com/trias-project/alien-fishes-checklist/blob/master/data/raw) → Darwin Core [mapping script](http://trias-project.github.io/alien-fishes-checklist/dwc_checklist.html) → generated [Darwin Core files](https://github.com/trias-project/alien-fishes-checklist/blob/master/data/processed)
+[source data](https://github.com/trias-project/alien-fishes-checklist/blob/master/data/raw) → Darwin Core [mapping script](http://trias-project.github.io/alien-fishes-checklist/dwc_mapping.html) → generated [Darwin Core files](https://github.com/trias-project/alien-fishes-checklist/blob/master/data/processed)
 
 ## Published dataset
 
@@ -31,8 +31,8 @@ The repository structure is based on [Cookiecutter Data Science](http://drivenda
 ├── specifications    : Data specifications for the Darwin Core files
 │
 └── src
-    ├── dwc_checklist.Rmd : Darwin Core mapping script, core functionality of this repository
-    └── src.Rproj         : RStudio project file
+    ├── dwc_mapping.Rmd : Darwin Core mapping script, core functionality of this repository
+    └── src.Rproj       : RStudio project file
 ```
 
 ## Installation
