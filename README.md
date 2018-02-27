@@ -15,18 +15,18 @@ This repository contains the functionality to standardize the _Checklist of non-
 
 ## Repo structure
 
-The repository structure is based on [Cookiecutter Data Science](http://drivendata.github.io/cookiecutter-data-science/). Files indicated with `GENERATED` should not be edited manually.
+The repository structure is based on [Cookiecutter Data Science](http://drivendata.github.io/cookiecutter-data-science/). Files and directories indicated with `GENERATED` should not be edited manually.
 
 ```
-├── README.md         : Top-level description of the project
-├── LICENSE           : Project license
-├── .gitignore        : Files and folders to be ignored by git
+├── README.md         : Description of this repository
+├── LICENSE           : Repository license
+├── .gitignore        : Files and directories to be ignored by git
 │
 ├── data
 │   ├── raw           : Source data, input for mapping script
 │   └── processed     : Darwin Core output of mapping script GENERATED
 │
-├── docs              : Code for documentation website GENERATED
+├── docs              : Repository website GENERATED
 │
 ├── specifications    : Data specifications for the Darwin Core files
 │
