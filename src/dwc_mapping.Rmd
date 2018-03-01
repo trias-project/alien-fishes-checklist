@@ -496,9 +496,9 @@ as.data.frame(matrix(data = c(
   "BW", "Ballast Water", "stowaway_ballast_water",
   "OR", "Ornamental", "escape_ornamental",
   "UN", "Unintentional", "Unintentional"),
-  nrow = 7, ncol = 3, 
-  dimnames = list(c(1:7), c("abbreviation", "full name", "CBD mapping")),
-  byrow = T))
+  nrow = 7, ncol = 3, byrow = TRUE,
+  dimnames = list(c(1:7), c("abbreviation", "full name", "CBD mapping"))
+))
 ```
 
 Map values:
