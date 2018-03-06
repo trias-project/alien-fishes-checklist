@@ -52,7 +52,7 @@ dwc_distribution_file = "../data/processed/distribution.csv"
 dwc_description_file = "../data/processed/description.csv"
 ```
 
-# Read data
+# Read and pre-process raw data
 
 Create a data frame `raw_data` from the source data:
 
@@ -77,6 +77,8 @@ vdigest <- Vectorize(digest)
 # Generate taxonID:
 raw_data %<>% mutate(taxon_id = paste("alien-fishes-checklist", "taxon", vdigest(latin_name, algo="md5"), sep = ":"))
 ```
+
+## Further pre-processing:
 
 Add prefix `raw_` to all column names to avoid name clashes with Darwin Core terms:
 
