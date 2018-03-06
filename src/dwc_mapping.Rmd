@@ -667,4 +667,3 @@ Save to CSV:
 
 ```{r}
 write.csv(description_ext, file = dwc_description_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
-```
