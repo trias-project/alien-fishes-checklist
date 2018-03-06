@@ -26,8 +26,8 @@
 <link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
 <script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-1.1/default.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
 <script src="site_libs/pagedtable-1.1/js/pagedtable.js"></script>
 <link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
@@ -39,10 +39,12 @@
   }
 </style>
 <script type="text/javascript">
-if (window.hljs && document.readyState && document.readyState === "complete") {
-   window.setTimeout(function() {
-      hljs.initHighlighting();
-   }, 0);
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
 }
 </script>
 
@@ -75,7 +77,7 @@ h6 {
 }
 </style>
 
-<link rel="stylesheet" href="static\css\trias.css" type="text/css" />
+<link rel="stylesheet" href="static/css/trias.css" type="text/css" />
 
 </head>
 
@@ -315,7 +317,7 @@ div.tocify {
 <p>Set locale (so we use UTF-8 character encoding):</p>
 <pre class="r"><code># This works on Mac OS X, might not work on other OS
 Sys.setlocale(&quot;LC_CTYPE&quot;, &quot;en_US.UTF-8&quot;)</code></pre>
-<pre><code>## [1] &quot;&quot;</code></pre>
+<pre><code>## [1] &quot;en_US.UTF-8&quot;</code></pre>
 <p>Load libraries:</p>
 <pre class="r"><code>library(tidyverse) # To transform data
 library(magrittr)  # For %&lt;&gt;% pipes
@@ -557,7 +559,7 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
 <li>Pathway of introduction</li>
 <li>Invasion stage</li>
 </ul>
-<p>The structure of the description extension is slightly different from the other core/extension files: information for a specific taxon (linked to taxonID) is provided in <strong>multipele</strong> lines within the csv file: one line per taxon per descriptor. In this way, we are able to include multipele descriptors for each species.</p>
+<p>A single taxon can have multiple descriptions of the same type (e.g. multiple native ranges), expressed as multiple rows in the description extension.</p>
 <p>For each descriptor, we create a separate dataframe to process the specific information. We always specify <em>which descriptor</em> we map (<code>type</code> column) and its <em>specific content</em> (<code>description</code> column). After the mapping of these Darwin Core terms <code>type</code> and <code>value</code>, we merge the dataframes to generate one single description extension. We then continue the mapping process by adding the other Darwin Core terms (which content is independent of the type of descriptor, such as <code>language</code>).</p>
 <div id="native-range" class="section level2">
 <h2><span class="header-section-number">6.1</span> Native range</h2>
@@ -647,7 +649,7 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
 <p>This is a manually created overview of the abbreviations used in this dataset, their interpretation and the mapping to the CBD vocabulary:</p>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":["abbreviation"],"name":[1],"type":["fctr"],"align":["left"]},{"label":["full name"],"name":[2],"type":["fctr"],"align":["left"]},{"label":["CBD mapping"],"name":[3],"type":["fctr"],"align":["left"]}],"data":[{"1":"AM","2":"Active Migration","3":"corridor_water"},{"1":"AN","2":"Angling/bait fish","3":"escape_food_bait"},{"1":"AQ","2":"Aquaculture","3":"escape_aquaculture"},{"1":"BC","2":"Biological Control","3":"release_biologica_control"},{"1":"BW","2":"Ballast Water","3":"stowaway_ballast_water"},{"1":"OR","2":"Ornamental","3":"escape_ornamental"},{"1":"UN","2":"Unintentional","3":"Unintentional"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["abbreviation"],"name":[1],"type":["fctr"],"align":["left"]},{"label":["full name"],"name":[2],"type":["fctr"],"align":["left"]},{"label":["CBD mapping"],"name":[3],"type":["fctr"],"align":["left"]}],"data":[{"1":"AM","2":"Active Migration","3":"corridor_water","_rn_":"1"},{"1":"AN","2":"Angling/bait fish","3":"escape_food_bait","_rn_":"2"},{"1":"AQ","2":"Aquaculture","3":"escape_aquaculture","_rn_":"3"},{"1":"BC","2":"Biological Control","3":"release_biologica_control","_rn_":"4"},{"1":"BW","2":"Ballast Water","3":"stowaway_ballast_water","_rn_":"5"},{"1":"OR","2":"Ornamental","3":"escape_ornamental","_rn_":"6"},{"1":"UN","2":"Unintentional","3":"Unintentional","_rn_":"7"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <p>Map values:</p>
