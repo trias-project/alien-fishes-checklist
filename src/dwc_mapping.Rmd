@@ -17,13 +17,13 @@ This document describes how we map the checklist data to Darwin Core. The source
 
 # Setup
 
-```{r, echo = FALSE}
+```{r setup, echo = FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 Set locale (so we use UTF-8 character encoding):
 
-```{r, eval = F}
+```{r}
 # This works on Mac OS X, might not work on other OS
 Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
 ```
@@ -31,15 +31,11 @@ Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
 Load libraries:
 
 ```{r}
-library(tidyverse) # For data transformations
-
-# None core tidyverse packages:
+library(tidyverse) # To transform data
 library(magrittr)  # For %<>% pipes
-
-# Other packages
-library(janitor)   # For cleaning input data
-library(readxl)    # To read excel files
-library(stringr)   # to perform string operations
+library(janitor)   # To clean input data
+library(readxl)    # To read Excel files
+library(stringr)   # To perform string operations
 library(digest)    # To generate hashes
 ```
 
@@ -57,15 +53,18 @@ dwc_description_file = "../data/processed/description.csv"
 dwc_profile_file = "../data/processed/speciesprofile.csv"
 ```
 
-# Read data
+# Read and pre-process raw data
 
 Create a data frame `raw_data` from the source data:
 
 ```{r}
 # Read the source data:
-raw_data <- read_excel(raw_data_file, sheet = "Checklist", na = "NA") 
+raw_data <- read_excel(raw_data_file, sheet = "Checklist", na = "NA")
+```
 
-# Clean the data somewhat: remove empty rows if present
+Clean the data somewhat: remove empty rows if present
+
+```{r}
 raw_data %<>%
   remove_empty_rows() %>%     # Remove empty rows
   clean_names()               # Have sensible (lowercase) column names
@@ -73,43 +72,39 @@ raw_data %<>%
 
 ## Generate taxonID
 
-To uniquely identify a taxon in the taxon core and reference taxa in the extensions, we need a `taxonID`. Since we need it in all generated files, we generate it here in the raw data frame. It is a combination of `dataset-shortname:taxon:` and a hash based on the scientific name. As long as the scientific name doesn't change, the ID will be stable: 
+To uniquely identify a taxon in the taxon core and reference taxa in the extensions, we need a `taxonID`. Since we need it in all generated files, we generate it here in the raw data frame. It is a combination of `dataset-shortname:taxon:` and a hash based on the scientific name. As long as the scientific name doesn't change, the ID will be stable:
 
 ```{r}
 # Vectorize the digest function (The digest() function isn't vectorized. So if you pass in a vector, you get one value for the whole vector rather than a digest for each element of the vector):
 vdigest <- Vectorize(digest)
 
 # Generate taxonID:
-raw_data %<>% mutate(taxon_id = paste("alien-fishes-checklist", "taxon", vdigest(latin_name, algo="md5"), sep=":"))
+raw_data %<>% mutate(taxon_id = paste("alien-fishes-checklist", "taxon", vdigest(latin_name, algo="md5"), sep = ":"))
 ```
 
-Further processing:
+## Further pre-processing:
+
+Add prefix `raw_` to all column names to avoid name clashes with Darwin Core terms:
 
 ```{r}
-# Add prefix `raw_` to all column names to avoid name clashes with Darwin Core terms:
 colnames(raw_data) <- paste0("raw_", colnames(raw_data))
-
-# Save those column names as a vector (makes it easier to remove them all later):
-raw_colnames <- colnames(raw_data)
 ```
- 
+
 Preview data:
 
 ```{r}
-head(raw_data)
+raw_data %>% head()
 ```
 
 # Create taxon core
 
-## Pre-processing
-
-```{r}
+```{r start_taxon}
 taxon <- raw_data
 ```
 
 ## Term mapping
  
-Map the source data to [Darwin Core Taxon](http://rs.gbif.org/core/dwc_taxon_2015-04-24.xml):
+Map the data to [Darwin Core Taxon](http://rs.gbif.org/core/dwc_taxon_2015-04-24.xml).
  
 ### language
 
@@ -160,6 +155,12 @@ taxon %<>% mutate(taxonID = raw_taxon_id)
 taxon %<>% mutate(scientificName = raw_latin_name)
 ```
 
+Verify that `scientificName` contains unique values:
+
+```{r}
+any(duplicated(taxon$scientificName)) # Should be FALSE
+```
+
 ### kingdom
 
 ```{r}
@@ -185,13 +186,13 @@ taxon %<>% mutate(nomenclaturalCode = "ICZN")
 Remove the original columns:
 
 ```{r}
-taxon %<>% select(-one_of(raw_colnames))
+taxon %<>% select(-starts_with("raw_"))
 ```
 
 Preview data:
 
 ```{r}
-head(taxon)
+taxon %>% head()
 ```
 
 Save to CSV:
@@ -202,15 +203,13 @@ write.csv(taxon, file = dwc_taxon_file, na = "", row.names = FALSE, fileEncoding
 
 # Create vernacular names extension
 
-## Pre-processing
-
-```{r}
+```{r start_vernacular_names}
 vernacular_names <- raw_data
 ```
 
 ## Term mapping
 
-Map the source data to [Vernacular Names](http://rs.gbif.org/extension/gbif/1.0/vernacularname.xml):
+Map the data to [Vernacular Names](http://rs.gbif.org/extension/gbif/1.0/vernacularname.xml).
 
 ### taxonID
 
@@ -225,10 +224,8 @@ Vernacular names are available in two languages: English (`raw_common_name`) and
 ```{r}
 vernacular_names %<>%
   gather(key = language, value = vernacularName, raw_common_name, raw_nederlandse_naam, na.rm = TRUE, convert = TRUE) %>%
-  select(-language, everything()) # Move language column to end
+  select(-language, everything()) # Move language column to the end
 ```
-
-Sort on `taxonID` to keep information for a single taxon together:
 
 ```{r}
 vernacular_names %<>% arrange(taxonID)
@@ -245,19 +242,20 @@ vernacular_names %<>% mutate(language = recode(language,
 ))
 ```
 
-## Post-processing:
+## Post-processing
 
 Remove the original columns: 
 
 ```{r}
 vernacular_names %<>% select(
   -starts_with("raw"))
+
 ```
 
 Preview data:
 
 ```{r}
-head(vernacular_names)
+vernacular_names %>% head()
 ```
 
 Save to CSV:
@@ -267,14 +265,14 @@ write.csv(vernacular_names, file = dwc_vernacular_file, na = "", row.names = FAL
 ```
 
 # Create distribution extension
-  
-## Pre-processing
 
-```{r}
+```{r start_distribution}
 distribution <- raw_data
 ```
 
 ## Term mapping
+
+Map the data to [Species Distribution](http://rs.gbif.org/extension/gbif/1.0/distribution.xml).
 
 ### taxonID
 
@@ -308,7 +306,7 @@ distribution %<>% mutate(occurrenceStatus = "present")
 
 ### establishmentMeans
 
-For `establishmentMeans` we follow the [GBIF controlled vocabulary](http://rs.gbif.org/vocabulary/gbif/establishment_means.xml) and just indicate that these species are `introduced` (= alien):
+We use the [GBIF controlled vocabulary](http://rs.gbif.org/vocabulary/gbif/establishment_means.xml) for this term. For this dataset, all species are `introduced` (= alien):
 
 ```{r}
 distribution %<>% mutate(establishmentMeans = "introduced")
@@ -316,9 +314,9 @@ distribution %<>% mutate(establishmentMeans = "introduced")
 
 ### eventDate
 
-Distributions will have a start and end year, expressed in `eventDate` as ISO 8601 `yyyy/yyyy` (`start_year`/`end_year`). The `start_year` will contain the information from the first observation (`raw_introduction`). For the `end_year`, we have to assume when the presence of the species was last verified (even though all species are considered established). We will use the publication year of the Verreycken et al. 2018.
+The distribution information applies to a certain date range, which we will express here as an ISO 8601 date `yyyy/yyyy` (`start_year/end_year`).
 
-First, we create `start_year` from `raw_introduction`:
+The `start_year` is the year of first observation:
 
 ```{r}
 distribution %<>% mutate(start_year = raw_introduction)
@@ -335,13 +333,13 @@ distribution %<>% mutate(start_year = recode(start_year,
 ))
 ```
 
-Create `end_year`:
+As there is no `end_year` information, we'll consider the publication year of Verreycken et al. (2018) as the date when the presence of the species was last verified (even though all species are considered established and will probably be present after this year as well):
 
 ```{r}
 distribution %<>% mutate(end_year = "2018")
 ```
 
-Create `eventDate`:
+Create `eventDate` by combining `start_year/end_year`:
 
 ```{r}
 distribution %<>% mutate(eventDate = paste(start_year, end_year, sep = "/"))
@@ -350,8 +348,9 @@ distribution %<>% mutate(eventDate = paste(start_year, end_year, sep = "/"))
 Compare formatted dates with original dates in `raw_introduction`:
 
 ```{r}
-distribution %>% 
-  select (raw_introduction, eventDate)
+distribution %>%
+  distinct(raw_introduction, eventDate) %>%
+  arrange(raw_introduction)
 ```
 
 ## Post-processing
@@ -359,8 +358,7 @@ distribution %>%
 Remove the original columns:
 
 ```{r}
-distribution %<>% select(-one_of(raw_colnames),
-                         -start_year, -end_year)
+distribution %<>% select(-starts_with("raw_"), -start_year, -end_year)
 ```
 
 Preview data:
@@ -377,21 +375,38 @@ write.csv(distribution, file = dwc_distribution_file, na = "", row.names = FALSE
 
 # Create description extension
 
-In the description extension we want to include **native range** (`raw_origin`), **pathway** (`raw_pathway_s`) and **invasion stage** (`raw_status`). We'll create separate data frames for all and then combine these with union.
+In the description extension we want to include several important characteristics (hereafter refered to as descriptors) about the species:
+
+- Native range
+- Pathway of introduction
+- Invasion stage
+
+A single taxon can have multiple descriptions of the same type (e.g. multiple native ranges), expressed as multiple rows in the description extension.
+
+For each descriptor, we create a separate dataframe to process the specific information. We always specify _which descriptor_ we map (`type` column) and its _specific content_ (`description` column). After the mapping of these Darwin Core terms `type` and `value`, we merge the dataframes to generate one single description extension. We then continue the mapping process by adding the other Darwin Core terms (which content is independent of the type of descriptor, such as `language`).
 
 ## Native range
 
-`raw_origin` contains native range information (e.g. `AS` for Asia). We'll separate, map and combine these values:
+Native range information (e.g. `AS` for Asia) can be found in `raw_origin`.
 
-```{r}
+Create separate dataframe:
+
+```{r start_native_range}
 native_range <- raw_data
 ```
 
-Separate `raw_origin` on `" or "` in 2 columns:
+Show unique values:
 
 ```{r}
-native_range %<>% separate(
-  raw_origin,
+native_range %>%
+  distinct(raw_origin) %>%
+  arrange(raw_origin)
+```
+
+`raw_origin` contains multiple values (currently not more than 2), so we separate it on `" or "` in 2 columns:
+
+```{r}
+native_range %<>% separate(raw_origin,
   into = c("native_range_1", "native_range_2"),
   sep = " or ",
   remove = FALSE,
@@ -401,7 +416,7 @@ native_range %<>% separate(
 )
 ```
 
-Gather native ranges in a `key` and `value` column:
+Gather in a `key` and `value` column:
 
 ```{r}
 native_range %<>% gather(
@@ -410,16 +425,6 @@ native_range %<>% gather(
   na.rm = TRUE, # Also removes records for which there is no native_range_1
   convert = FALSE
 )
-```
-
-Show values:
-
-```{r}
-native_range %>%
-  select(value) %>%
-  group_by(value) %>%
-  summarize(records = n()) %>%
-  arrange(value)
 ```
 
 Map values:
@@ -436,7 +441,7 @@ Show mapped values:
 ```{r}
 native_range %>%
   select(value, mapped_value) %>%
-  group_by(value, mapped_value) %>%
+  group_by_all() %>%
   summarize(records = n()) %>%
   arrange(value) 
 ```
@@ -455,15 +460,25 @@ Create a `type` field to indicate the type of description:
 native_range %<>% mutate(type = "native range")
 ```
 
-## Pathway
+## Pathway of introduction
 
-Information for `pathway` can be found in `raw_pathway_s`, which contains a list of introduction pathways. We'll separate, clean, map and combine these values:
+Pathway information can be found in `raw_pathway_s`.
 
-```{r}
+Create separate dataframe:
+
+```{r start_pathway}
 pathway <- raw_data
 ```
 
-We separate `raw_pathway_s` in two separate columns:
+Show unique values:
+
+```{r}
+native_range %>%
+  distinct(raw_pathway_s) %>%
+  arrange(raw_pathway_s)
+```
+
+`raw_pathway_s` contains multiple values (currently not more than 2), so we separate it in 2 columns:
 
 ```{r}
 pathway %<>% separate(
@@ -477,7 +492,7 @@ pathway %<>% separate(
 )
 ```
 
-Gather pathways in a `key` and `value` column:
+Gather in a `key` and `value` column:
 
 ```{r}
 pathway %<>% gather(
@@ -488,17 +503,11 @@ pathway %<>% gather(
 )
 ```
 
-Show unique values:
+We use the [CBD 2014 pathway vocabulary](https://www.cbd.int/doc/meetings/sbstta/sbstta-18/official/sbstta-18-09-add1-en.pdf) to standardize this information. The vocubulary has [these values](https://github.com/trias-project/vocab/tree/master/vocabulary/pathway).
 
-```{r}
-pathway %>%
-  distinct(value) %>%
-  arrange(value)
-```
+This is a manually created overview of the abbreviations used in this dataset, their interpretation and the mapping to the CBD vocabulary:
 
-We use the [standardized vocabulary](https://github.com/trias-project/vocab/tree/master/vocabulary) suggested for TrIAS to perform the mapping. This vocabulary is based on the [CBD standard](https://www.cbd.int/doc/meetings/sbstta/sbstta-18/official/sbstta-18-09-add1-en.pdf). This is a manually created overview of the abbreviations used in the dataset, their interpretation and the mapping to the CBD standard:
-
-```{r, echo = F}
+```{r, echo = FALSE}
 as.data.frame(matrix(data = c(
   "AM", "Active Migration", "corridor_water",
   "AN", "Angling/bait fish","escape_food_bait",
@@ -507,12 +516,12 @@ as.data.frame(matrix(data = c(
   "BW", "Ballast Water", "stowaway_ballast_water",
   "OR", "Ornamental", "escape_ornamental",
   "UN", "Unintentional", "Unintentional"),
-  nrow = 7, ncol = 3, 
-  dimnames = list(c(1:7), c("abbreviation", "full name", "CBD mapping")),
-  byrow = T))
+  nrow = 7, ncol = 3, byrow = TRUE,
+  dimnames = list(c(1:7), c("abbreviation", "full name", "CBD mapping"))
+))
 ```
 
-Map the abbreviations to the CBD standard:
+Map values:
 
 ```{r}
 pathway %<>% mutate(mapped_value = recode(value,
@@ -526,7 +535,7 @@ pathway %<>% mutate(mapped_value = recode(value,
 ))
 ```
 
-Add the prefix `cbd_2014_pathway:` to refer to this standard (but not for `unintentional`, which has no alternative in the standard):
+Add the prefix `cbd_2014_pathway:` to refer to this standard, except for `unintentional`, which has no alternative in the standard:
 
 ```{r}
 pathway %<>% mutate(mapped_value = case_when (
@@ -539,7 +548,7 @@ Show mapped values:
 ```{r}
 pathway %>%
   select(value, mapped_value) %>%
-  group_by(value, mapped_value) %>%
+  group_by_all() %>%
   summarize(records = n()) %>%
   arrange(value) 
 ```
@@ -560,23 +569,26 @@ pathway %<>% mutate(type = "pathway")
 
 ## Invasion stage
 
-```{r}
+Invasion stage information (e.g. `casual`) can be found in `raw_status`. 
+
+Create separate dataframe:
+
+```{r start_invasion_stage}
 invasion_stage <- raw_data
 ```
 
-Information for `invasion stage` can be found in `raw_status`. This contains the following information:
+Show unique values:
 
 ```{r}
-invasion_stage %>%
-  select(raw_status) %>%
-  group_by(raw_status) %>%
-  summarize(records = n())
+native_range %>%
+  distinct(raw_status) %>%
+  arrange(raw_status)
 ```
 
-For the TrIAS project, we decided to map this information to the vocabulary for `invasion stage` contained in the unified framework for biological invasions of [Blackburn et al. 2011](http://doc.rero.ch/record/24725/files/bach_puf.pdf):
+We use the [invasion stage vocabulary from Blackburn et al. (2011)](http://doc.rero.ch/record/24725/files/bach_puf.pdf) to standardize this information.
 
-* `A` and `A*` in the raw data file stand for `acclimatized` and refers to the status where the alien species has overcome the geographical barrier, the captivity/cultivation barrier and the survival barier, but where it fails to establish because individuals in the population fail to reproduce. This includes species (like  Nile tilapia) in secluded warmer water of power plants. In Blackburn et al. (2011), this corresponds to the term `casual`.
-* `N` in the raw data file stands for `naturalized`. We discard this term, because often, there's no sensible criterium to distinguish between casual/naturalised and naturalised/established. Thus, here, we consider all `naturalized` species to be `established`.
+* `A` and `A*` in the raw data file stand for `acclimatized` and refers to the status where the alien species has overcome the geographical barrier, the captivity/cultivation barrier and the survival barier, but where it fails to establish because individuals in the population fail to reproduce. This includes species (like Nile tilapia) in secluded warmer water of power plants. In Blackburn et al. (2011), this corresponds to the term `casual`.
+* `N` in the raw data file stands for `naturalized`. We decided **not to use** this term, because often, there's no sensible criterium to distinguish between casual/naturalised and naturalised/established. Thus, here, we consider all `naturalized` species to be `established`.
 
 ```{r}
 invasion_stage %<>% mutate(description = case_when(
@@ -592,15 +604,17 @@ Create a `type` field to indicate the type of description:
 invasion_stage %<>% mutate(type = "invasion stage")
 ```
 
-## Union native range, pathway and invasion stage:
+## Union descriptions
 
-```{r}
+Union native range, pathway of introduction and invasion stage:
+
+```{r start_description_ext}
 description_ext <- bind_rows(native_range, pathway, invasion_stage)
 ```
 
 ## Term mapping
 
-Map the source data to [Taxon Description](http://rs.gbif.org/extension/gbif/1.0/description.xml):
+Map the data to [Taxon Description](http://rs.gbif.org/extension/gbif/1.0/description.xml).
 
 ### taxonID
 
@@ -631,8 +645,7 @@ description_ext %<>% mutate(language = "en")
 Remove the original columns:
 
 ```{r}
-description_ext %<>% select(
-  -one_of(raw_colnames))
+description_ext %<>% select(-starts_with("raw_"))
 ```
 
 Move `taxonID` to the first position:
@@ -650,7 +663,7 @@ description_ext %<>% arrange(taxonID)
 Preview data:
 
 ```{r}
-head(description_ext, 10)
+description_ext %>% head(10)
 ```
 
 Save to CSV:
@@ -721,3 +734,4 @@ Save to CSV:
 ```{r}
 write.csv(species_profile, file = dwc_profile_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
 ```
+
