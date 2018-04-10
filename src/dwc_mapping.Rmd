@@ -657,3 +657,29 @@ Save to CSV:
 ```{r}
 write.csv(description_ext, file = dwc_description_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
 ```
+
+# Create species profile extension
+
+In this extension will express broad habitat characteristics of the species.
+
+```{r start_species_profile}
+species_profile <- raw_data
+```
+
+Habitat information can be found in `raw_habitat`. All taxa are considered to be freshwater fishes. 
+
+## Term mapping
+
+Map the data to [Species Profile](http://rs.gbif.org/extension/gbif/1.0/speciesprofile.xml).
+
+### taxonID
+
+```{r}
+species_profile %<>% mutate(taxonID = raw_taxon_id)
+```
+
+### isMarine
+```{r}
+
+```
+
