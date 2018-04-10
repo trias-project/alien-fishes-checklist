@@ -54,6 +54,7 @@ dwc_taxon_file = "../data/processed/taxon.csv"
 dwc_vernacular_file = "../data/processed/vernacularname.csv"
 dwc_distribution_file = "../data/processed/distribution.csv"
 dwc_description_file = "../data/processed/description.csv"
+dwc_profile_file = "../data/processed/speciesprofile.csv"
 ```
 
 # Read data
@@ -680,6 +681,43 @@ species_profile %<>% mutate(taxonID = raw_taxon_id)
 
 ### isMarine
 ```{r}
-
+species_profile %<>% mutate(isMarine = FALSE)
 ```
 
+### isFreshwater
+
+```{r}
+species_profile %<>% mutate(isFreshwater = TRUE)
+```
+
+### isTerrestrial
+
+```{r}
+species_profile %<>% mutate(isTerrestrial = "FALSE")
+```
+
+## Post-processing
+
+Remove the original columns:
+
+```{r}
+species_profile %<>% select(-starts_with("raw_"))
+```
+
+Sort on `taxonID`:
+
+```{r}
+species_profile %<>% arrange(taxonID)
+```
+
+Preview data:
+
+```{r}
+species_profile %>% head()
+```
+
+Save to CSV:
+
+```{r}
+write.csv(species_profile, file = dwc_profile_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
+```
