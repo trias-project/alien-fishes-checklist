@@ -246,17 +246,11 @@ vernacular_names %<>% mutate(language = recode(language,
 
 ## Post-processing:
 
-We remove the original columns. However, `raw_colnames` contains `raw_nederlandse_naam` and `raw_common_name`, which are removed in `vernacularnames` by gathering these columns in a single column. Thus, it is easier to remove all columns individually, instead of using `raw_colnames` :
+Remove the original columns: 
 
 ```{r}
 vernacular_names %<>% select(
-  -raw_latin_name,
-  -raw_origin,
-  -raw_introduction,
-  -raw_pathway_s,
-  -raw_status,
-  -raw_main_pathway,
-  -raw_taxon_id)
+  -starts_with("raw"))
 ```
 
 Preview data:
