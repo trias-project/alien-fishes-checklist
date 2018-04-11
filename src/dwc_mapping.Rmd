@@ -50,6 +50,7 @@ dwc_taxon_file = "../data/processed/taxon.csv"
 dwc_vernacular_file = "../data/processed/vernacularname.csv"
 dwc_distribution_file = "../data/processed/distribution.csv"
 dwc_description_file = "../data/processed/description.csv"
+dwc_profile_file = "../data/processed/speciesprofile.csv"
 ```
 
 # Read and pre-process raw data
@@ -65,7 +66,7 @@ Clean the data somewhat: remove empty rows if present
 
 ```{r}
 raw_data %<>%
-  remove_empty_rows() %>%     # Remove empty rows
+  remove_empty("rows") %>%    # Remove empty rows
   clean_names()               # Have sensible (lowercase) column names
 ```
 
@@ -243,10 +244,12 @@ vernacular_names %<>% mutate(language = recode(language,
 
 ## Post-processing
 
-Remove the original columns:
+Remove the original columns: 
 
 ```{r}
-vernacular_names %<>% select(-starts_with("raw_"))
+vernacular_names %<>% select(
+  -starts_with("raw"))
+
 ```
 
 Preview data:
@@ -667,3 +670,67 @@ Save to CSV:
 
 ```{r}
 write.csv(description_ext, file = dwc_description_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
+```
+
+# Create species profile extension
+
+In this extension will express broad habitat characteristics of the species.
+
+```{r start_species_profile}
+species_profile <- raw_data
+```
+
+Habitat information can be found in `raw_habitat`. All taxa are considered to be freshwater fishes. 
+
+## Term mapping
+
+Map the data to [Species Profile](http://rs.gbif.org/extension/gbif/1.0/speciesprofile.xml).
+
+### taxonID
+
+```{r}
+species_profile %<>% mutate(taxonID = raw_taxon_id)
+```
+
+### isMarine
+```{r}
+species_profile %<>% mutate(isMarine = FALSE)
+```
+
+### isFreshwater
+
+```{r}
+species_profile %<>% mutate(isFreshwater = TRUE)
+```
+
+### isTerrestrial
+
+```{r}
+species_profile %<>% mutate(isTerrestrial = "FALSE")
+```
+
+## Post-processing
+
+Remove the original columns:
+
+```{r}
+species_profile %<>% select(-starts_with("raw_"))
+```
+
+Sort on `taxonID`:
+
+```{r}
+species_profile %<>% arrange(taxonID)
+```
+
+Preview data:
+
+```{r}
+species_profile %>% head()
+```
+
+Save to CSV:
+
+```{r}
+write.csv(species_profile, file = dwc_profile_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
+```
