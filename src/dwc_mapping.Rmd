@@ -66,7 +66,7 @@ Clean the data somewhat: remove empty rows if present
 
 ```{r}
 raw_data %<>%
-  remove_empty_rows() %>%     # Remove empty rows
+  remove_empty("rows") %>%    # Remove empty rows
   clean_names()               # Have sensible (lowercase) column names
 ```
 
@@ -734,4 +734,3 @@ Save to CSV:
 ```{r}
 write.csv(species_profile, file = dwc_profile_file, na = "", row.names = FALSE, fileEncoding = "UTF-8")
 ```
-
