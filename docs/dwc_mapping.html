@@ -12,7 +12,7 @@
 <meta name="author" content="Lien Reyserhove" />
 <meta name="author" content="Peter Desmet" />
 
-<meta name="date" content="2018-04-11" />
+<meta name="date" content="2018-10-04" />
 
 <title>Darwin Core mapping</title>
 
@@ -30,7 +30,9 @@
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
 <script src="site_libs/pagedtable-1.1/js/pagedtable.js"></script>
-<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.0.13/css/fa-svg-with-js.css" rel="stylesheet" />
+<script src="site_libs/font-awesome-5.0.13/js/fontawesome-all.min.js"></script>
+<script src="site_libs/font-awesome-5.0.13/js/fa-v4-shims.min.js"></script>
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
@@ -99,6 +101,9 @@ img {
 }
 .tabbed-pane {
   padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
 }
 button.code-folding-btn:focus {
   outline: none;
@@ -306,25 +311,19 @@ div.tocify {
 <h3 class="subtitle"><em>For: Checklist of non-native freshwater fishes in Flanders, Belgium</em></h3>
 <h4 class="author"><em>Lien Reyserhove</em></h4>
 <h4 class="author"><em>Peter Desmet</em></h4>
-<h4 class="date"><em>2018-04-11</em></h4>
+<h4 class="date"><em>2018-10-04</em></h4>
 
 </div>
 
 
 <p>This document describes how we map the checklist data to Darwin Core. The source file for this document can be found <a href="https://github.com/trias-project/alien-fishes-checklist/blob/master/src/dwc_mapping.Rmd">here</a>.</p>
-<div id="setup" class="section level1">
-<h1><span class="header-section-number">1</span> Setup</h1>
-<p>Set locale (so we use UTF-8 character encoding):</p>
-<pre class="r"><code># This works on Mac OS X, might not work on other OS
-Sys.setlocale(&quot;LC_CTYPE&quot;, &quot;en_US.UTF-8&quot;)</code></pre>
-<pre><code>## [1] &quot;en_US.UTF-8&quot;</code></pre>
 <p>Load libraries:</p>
-<pre class="r"><code>library(tidyverse) # To transform data
-library(magrittr)  # For %&lt;&gt;% pipes
-library(janitor)   # To clean input data
-library(readxl)    # To read Excel files
-library(stringr)   # To perform string operations
-library(digest)    # To generate hashes</code></pre>
+<pre class="r"><code>library(tidyverse)      # To do data science
+library(magrittr)       # To use %&lt;&gt;% pipes
+library(here)           # To find files
+library(janitor)        # To clean input data
+library(readxl)         # To read Excel files
+library(digest)         # To generate hashes</code></pre>
 <p>Set file paths (all paths should be relative to this script):</p>
 <pre class="r"><code># Raw files:
 raw_data_file = &quot;../data/raw/ExotischeVissenVlaanderen2016.xlsx&quot;
@@ -335,9 +334,8 @@ dwc_vernacular_file = &quot;../data/processed/vernacularname.csv&quot;
 dwc_distribution_file = &quot;../data/processed/distribution.csv&quot;
 dwc_description_file = &quot;../data/processed/description.csv&quot;
 dwc_profile_file = &quot;../data/processed/speciesprofile.csv&quot;</code></pre>
-</div>
 <div id="read-and-pre-process-raw-data" class="section level1">
-<h1><span class="header-section-number">2</span> Read and pre-process raw data</h1>
+<h1><span class="header-section-number">1</span> Read and pre-process raw data</h1>
 <p>Create a data frame <code>raw_data</code> from the source data:</p>
 <pre class="r"><code># Read the source data:
 raw_data &lt;- read_excel(raw_data_file, sheet = &quot;Checklist&quot;, na = &quot;NA&quot;)</code></pre>
@@ -346,7 +344,7 @@ raw_data &lt;- read_excel(raw_data_file, sheet = &quot;Checklist&quot;, na = &qu
   remove_empty(&quot;rows&quot;) %&gt;%    # Remove empty rows
   clean_names()               # Have sensible (lowercase) column names</code></pre>
 <div id="generate-taxonid" class="section level2">
-<h2><span class="header-section-number">2.1</span> Generate taxonID</h2>
+<h2><span class="header-section-number">1.1</span> Generate taxonID</h2>
 <p>To uniquely identify a taxon in the taxon core and reference taxa in the extensions, we need a <code>taxonID</code>. Since we need it in all generated files, we generate it here in the raw data frame. It is a combination of <code>dataset-shortname:taxon:</code> and a hash based on the scientific name. As long as the scientific name doesn’t change, the ID will be stable:</p>
 <pre class="r"><code># Vectorize the digest function (The digest() function isn&#39;t vectorized. So if you pass in a vector, you get one value for the whole vector rather than a digest for each element of the vector):
 vdigest &lt;- Vectorize(digest)
@@ -355,7 +353,7 @@ vdigest &lt;- Vectorize(digest)
 raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, &quot;taxon&quot;, vdigest(latin_name, algo=&quot;md5&quot;), sep = &quot;:&quot;))</code></pre>
 </div>
 <div id="further-pre-processing" class="section level2">
-<h2><span class="header-section-number">2.2</span> Further pre-processing:</h2>
+<h2><span class="header-section-number">1.2</span> Further pre-processing:</h2>
 <p>Add prefix <code>raw_</code> to all column names to avoid name clashes with Darwin Core terms:</p>
 <pre class="r"><code>colnames(raw_data) &lt;- paste0(&quot;raw_&quot;, colnames(raw_data))</code></pre>
 <p>Preview data:</p>
@@ -368,62 +366,62 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
 </div>
 </div>
 <div id="create-taxon-core" class="section level1">
-<h1><span class="header-section-number">3</span> Create taxon core</h1>
+<h1><span class="header-section-number">2</span> Create taxon core</h1>
 <pre class="r"><code>taxon &lt;- raw_data</code></pre>
 <div id="term-mapping" class="section level2">
-<h2><span class="header-section-number">3.1</span> Term mapping</h2>
+<h2><span class="header-section-number">2.1</span> Term mapping</h2>
 <p>Map the data to <a href="http://rs.gbif.org/core/dwc_taxon_2015-04-24.xml">Darwin Core Taxon</a>.</p>
 <div id="language" class="section level3">
-<h3><span class="header-section-number">3.1.1</span> language</h3>
+<h3><span class="header-section-number">2.1.1</span> language</h3>
 <pre class="r"><code>taxon %&lt;&gt;% mutate(language = &quot;en&quot;)</code></pre>
 </div>
 <div id="license" class="section level3">
-<h3><span class="header-section-number">3.1.2</span> license</h3>
+<h3><span class="header-section-number">2.1.2</span> license</h3>
 <pre class="r"><code>taxon %&lt;&gt;% mutate(license = &quot;http://creativecommons.org/publicdomain/zero/1.0/&quot;)</code></pre>
 </div>
 <div id="rightsholder" class="section level3">
-<h3><span class="header-section-number">3.1.3</span> rightsHolder</h3>
+<h3><span class="header-section-number">2.1.3</span> rightsHolder</h3>
 <pre class="r"><code>taxon %&lt;&gt;% mutate(rightsHolder = &quot;INBO&quot;)</code></pre>
 </div>
 <div id="accessrights" class="section level3">
-<h3><span class="header-section-number">3.1.4</span> accessRights</h3>
+<h3><span class="header-section-number">2.1.4</span> accessRights</h3>
 <pre class="r"><code>taxon %&lt;&gt;% mutate(accessRights = &quot;http://www.inbo.be/en/norms-for-data-use&quot;)</code></pre>
 </div>
 <div id="datasetid" class="section level3">
-<h3><span class="header-section-number">3.1.5</span> datasetID</h3>
+<h3><span class="header-section-number">2.1.5</span> datasetID</h3>
 <pre class="r"><code>taxon %&lt;&gt;% mutate(datasetID = &quot;https://doi.org/10.15468/xvuzfh&quot;)</code></pre>
 </div>
 <div id="datasetname" class="section level3">
-<h3><span class="header-section-number">3.1.6</span> datasetName</h3>
+<h3><span class="header-section-number">2.1.6</span> datasetName</h3>
 <pre class="r"><code>taxon %&lt;&gt;% mutate(datasetName = &quot;Checklist of non-native freshwater fishes in Flanders, Belgium&quot;)</code></pre>
 </div>
 <div id="taxonid" class="section level3">
-<h3><span class="header-section-number">3.1.7</span> taxonID</h3>
+<h3><span class="header-section-number">2.1.7</span> taxonID</h3>
 <pre class="r"><code>taxon %&lt;&gt;% mutate(taxonID = raw_taxon_id)</code></pre>
 </div>
 <div id="scientificname" class="section level3">
-<h3><span class="header-section-number">3.1.8</span> scientificName</h3>
+<h3><span class="header-section-number">2.1.8</span> scientificName</h3>
 <pre class="r"><code>taxon %&lt;&gt;% mutate(scientificName = raw_latin_name)</code></pre>
 <p>Verify that <code>scientificName</code> contains unique values:</p>
 <pre class="r"><code>any(duplicated(taxon$scientificName)) # Should be FALSE</code></pre>
 <pre><code>## [1] FALSE</code></pre>
 </div>
 <div id="kingdom" class="section level3">
-<h3><span class="header-section-number">3.1.9</span> kingdom</h3>
+<h3><span class="header-section-number">2.1.9</span> kingdom</h3>
 <pre class="r"><code>taxon %&lt;&gt;% mutate(kingdom = &quot;Animalia&quot;)</code></pre>
 </div>
 <div id="taxonrank" class="section level3">
-<h3><span class="header-section-number">3.1.10</span> taxonRank</h3>
+<h3><span class="header-section-number">2.1.10</span> taxonRank</h3>
 <p>All taxa are species:</p>
 <pre class="r"><code>taxon %&lt;&gt;% mutate(taxonRank = &quot;species&quot;)</code></pre>
 </div>
 <div id="nomenclaturalcode" class="section level3">
-<h3><span class="header-section-number">3.1.11</span> nomenclaturalCode</h3>
+<h3><span class="header-section-number">2.1.11</span> nomenclaturalCode</h3>
 <pre class="r"><code>taxon %&lt;&gt;% mutate(nomenclaturalCode = &quot;ICZN&quot;)</code></pre>
 </div>
 </div>
 <div id="post-processing" class="section level2">
-<h2><span class="header-section-number">3.2</span> Post-processing</h2>
+<h2><span class="header-section-number">2.2</span> Post-processing</h2>
 <p>Remove the original columns:</p>
 <pre class="r"><code>taxon %&lt;&gt;% select(-starts_with(&quot;raw_&quot;))</code></pre>
 <p>Preview data:</p>
@@ -434,21 +432,21 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
   </script>
 </div>
 <p>Save to CSV:</p>
-<pre class="r"><code>write.csv(taxon, file = dwc_taxon_file, na = &quot;&quot;, row.names = FALSE, fileEncoding = &quot;UTF-8&quot;)</code></pre>
+<pre class="r"><code>write_csv(taxon, dwc_taxon_file, na = &quot;&quot;)</code></pre>
 </div>
 </div>
 <div id="create-vernacular-names-extension" class="section level1">
-<h1><span class="header-section-number">4</span> Create vernacular names extension</h1>
+<h1><span class="header-section-number">3</span> Create vernacular names extension</h1>
 <pre class="r"><code>vernacular_names &lt;- raw_data</code></pre>
 <div id="term-mapping-1" class="section level2">
-<h2><span class="header-section-number">4.1</span> Term mapping</h2>
+<h2><span class="header-section-number">3.1</span> Term mapping</h2>
 <p>Map the data to <a href="http://rs.gbif.org/extension/gbif/1.0/vernacularname.xml">Vernacular Names</a>.</p>
 <div id="taxonid-1" class="section level3">
-<h3><span class="header-section-number">4.1.1</span> taxonID</h3>
+<h3><span class="header-section-number">3.1.1</span> taxonID</h3>
 <pre class="r"><code>vernacular_names %&lt;&gt;% mutate(taxonID = raw_taxon_id)</code></pre>
 </div>
 <div id="vernacularname" class="section level3">
-<h3><span class="header-section-number">4.1.2</span> vernacularName</h3>
+<h3><span class="header-section-number">3.1.2</span> vernacularName</h3>
 <p>Vernacular names are available in two languages: English (<code>raw_common_name</code>) and Dutch (<code>raw_nederlandse_naam</code>). We will gather these columns to generate a single column containing the vernacular name (<code>vernacularName</code>) and an additional column with the language (<code>language</code>):</p>
 <pre class="r"><code>vernacular_names %&lt;&gt;%
   gather(key = language, value = vernacularName, raw_common_name, raw_nederlandse_naam, na.rm = TRUE, convert = TRUE) %&gt;%
@@ -456,7 +454,7 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
 <pre class="r"><code>vernacular_names %&lt;&gt;% arrange(taxonID)</code></pre>
 </div>
 <div id="language-1" class="section level3">
-<h3><span class="header-section-number">4.1.3</span> language</h3>
+<h3><span class="header-section-number">3.1.3</span> language</h3>
 <p>This column currently contains the original column name, which we will recode to the ISO 639-1 language code:</p>
 <pre class="r"><code>vernacular_names %&lt;&gt;% mutate(language = recode(language,
   &quot;raw_common_name&quot; = &quot;en&quot;,
@@ -465,7 +463,7 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
 </div>
 </div>
 <div id="post-processing-1" class="section level2">
-<h2><span class="header-section-number">4.2</span> Post-processing</h2>
+<h2><span class="header-section-number">3.2</span> Post-processing</h2>
 <p>Remove the original columns:</p>
 <pre class="r"><code>vernacular_names %&lt;&gt;% select(
   -starts_with(&quot;raw&quot;))</code></pre>
@@ -477,42 +475,42 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
   </script>
 </div>
 <p>Save to CSV:</p>
-<pre class="r"><code>write.csv(vernacular_names, file = dwc_vernacular_file, na = &quot;&quot;, row.names = FALSE, fileEncoding = &quot;UTF-8&quot;)</code></pre>
+<pre class="r"><code>write_csv(vernacular_names, dwc_vernacular_file, na = &quot;&quot;)</code></pre>
 </div>
 </div>
 <div id="create-distribution-extension" class="section level1">
-<h1><span class="header-section-number">5</span> Create distribution extension</h1>
+<h1><span class="header-section-number">4</span> Create distribution extension</h1>
 <pre class="r"><code>distribution &lt;- raw_data</code></pre>
 <div id="term-mapping-2" class="section level2">
-<h2><span class="header-section-number">5.1</span> Term mapping</h2>
+<h2><span class="header-section-number">4.1</span> Term mapping</h2>
 <p>Map the data to <a href="http://rs.gbif.org/extension/gbif/1.0/distribution.xml">Species Distribution</a>.</p>
 <div id="taxonid-2" class="section level3">
-<h3><span class="header-section-number">5.1.1</span> taxonID</h3>
+<h3><span class="header-section-number">4.1.1</span> taxonID</h3>
 <pre class="r"><code>distribution %&lt;&gt;% mutate(taxonID = raw_taxon_id)</code></pre>
 </div>
 <div id="locationid" class="section level3">
-<h3><span class="header-section-number">5.1.2</span> locationID</h3>
+<h3><span class="header-section-number">4.1.2</span> locationID</h3>
 <pre class="r"><code>distribution %&lt;&gt;% mutate(locationID = &quot;ISO_3166-2:BE-VLG&quot;)</code></pre>
 </div>
 <div id="locality" class="section level3">
-<h3><span class="header-section-number">5.1.3</span> locality</h3>
+<h3><span class="header-section-number">4.1.3</span> locality</h3>
 <pre class="r"><code>distribution %&lt;&gt;% mutate(locality = &quot;Flemish Region&quot;)</code></pre>
 </div>
 <div id="countrycode" class="section level3">
-<h3><span class="header-section-number">5.1.4</span> countryCode</h3>
+<h3><span class="header-section-number">4.1.4</span> countryCode</h3>
 <pre class="r"><code>distribution %&lt;&gt;% mutate(countryCode = &quot;BE&quot;)</code></pre>
 </div>
 <div id="occurrencestatus" class="section level3">
-<h3><span class="header-section-number">5.1.5</span> occurrenceStatus</h3>
+<h3><span class="header-section-number">4.1.5</span> occurrenceStatus</h3>
 <pre class="r"><code>distribution %&lt;&gt;% mutate(occurrenceStatus = &quot;present&quot;)</code></pre>
 </div>
 <div id="establishmentmeans" class="section level3">
-<h3><span class="header-section-number">5.1.6</span> establishmentMeans</h3>
+<h3><span class="header-section-number">4.1.6</span> establishmentMeans</h3>
 <p>We use the <a href="http://rs.gbif.org/vocabulary/gbif/establishment_means.xml">GBIF controlled vocabulary</a> for this term. For this dataset, all species are <code>introduced</code> (= alien):</p>
 <pre class="r"><code>distribution %&lt;&gt;% mutate(establishmentMeans = &quot;introduced&quot;)</code></pre>
 </div>
 <div id="eventdate" class="section level3">
-<h3><span class="header-section-number">5.1.7</span> eventDate</h3>
+<h3><span class="header-section-number">4.1.7</span> eventDate</h3>
 <p>The distribution information applies to a certain date range, which we will express here as an ISO 8601 date <code>yyyy/yyyy</code> (<code>start_year/end_year</code>).</p>
 <p>The <code>start_year</code> is the year of first observation:</p>
 <pre class="r"><code>distribution %&lt;&gt;% mutate(start_year = raw_introduction)</code></pre>
@@ -539,7 +537,7 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
 </div>
 </div>
 <div id="post-processing-2" class="section level2">
-<h2><span class="header-section-number">5.2</span> Post-processing</h2>
+<h2><span class="header-section-number">4.2</span> Post-processing</h2>
 <p>Remove the original columns:</p>
 <pre class="r"><code>distribution %&lt;&gt;% select(-starts_with(&quot;raw_&quot;), -start_year, -end_year)</code></pre>
 <p>Preview data:</p>
@@ -550,11 +548,11 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
   </script>
 </div>
 <p>Save to CSV:</p>
-<pre class="r"><code>write.csv(distribution, file = dwc_distribution_file, na = &quot;&quot;, row.names = FALSE, fileEncoding = &quot;UTF-8&quot;)</code></pre>
+<pre class="r"><code>write_csv(distribution, dwc_distribution_file, na = &quot;&quot;)</code></pre>
 </div>
 </div>
 <div id="create-description-extension" class="section level1">
-<h1><span class="header-section-number">6</span> Create description extension</h1>
+<h1><span class="header-section-number">5</span> Create description extension</h1>
 <p>In the description extension we want to include several important characteristics (hereafter refered to as descriptors) about the species:</p>
 <ul>
 <li>Native range</li>
@@ -564,7 +562,7 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
 <p>A single taxon can have multiple descriptions of the same type (e.g. multiple native ranges), expressed as multiple rows in the description extension.</p>
 <p>For each descriptor, we create a separate dataframe to process the specific information. We always specify <em>which descriptor</em> we map (<code>type</code> column) and its <em>specific content</em> (<code>description</code> column). After the mapping of these Darwin Core terms <code>type</code> and <code>value</code>, we merge the dataframes to generate one single description extension. We then continue the mapping process by adding the other Darwin Core terms (which content is independent of the type of descriptor, such as <code>language</code>).</p>
 <div id="native-range" class="section level2">
-<h2><span class="header-section-number">6.1</span> Native range</h2>
+<h2><span class="header-section-number">5.1</span> Native range</h2>
 <p>Native range information (e.g. <code>AS</code> for Asia) can be found in <code>raw_origin</code>.</p>
 <p>Create separate dataframe:</p>
 <pre class="r"><code>native_range &lt;- raw_data</code></pre>
@@ -617,7 +615,7 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
 <pre class="r"><code>native_range %&lt;&gt;% mutate(type = &quot;native range&quot;)</code></pre>
 </div>
 <div id="pathway-of-introduction" class="section level2">
-<h2><span class="header-section-number">6.2</span> Pathway of introduction</h2>
+<h2><span class="header-section-number">5.2</span> Pathway of introduction</h2>
 <p>Pathway information can be found in <code>raw_pathway_s</code>.</p>
 <p>Create separate dataframe:</p>
 <pre class="r"><code>pathway &lt;- raw_data</code></pre>
@@ -687,7 +685,7 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
 <pre class="r"><code>pathway %&lt;&gt;% mutate(type = &quot;pathway&quot;)</code></pre>
 </div>
 <div id="invasion-stage" class="section level2">
-<h2><span class="header-section-number">6.3</span> Invasion stage</h2>
+<h2><span class="header-section-number">5.3</span> Invasion stage</h2>
 <p>Invasion stage information (e.g. <code>casual</code>) can be found in <code>raw_status</code>.</p>
 <p>Create separate dataframe:</p>
 <pre class="r"><code>invasion_stage &lt;- raw_data</code></pre>
@@ -714,32 +712,32 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
 <pre class="r"><code>invasion_stage %&lt;&gt;% mutate(type = &quot;invasion stage&quot;)</code></pre>
 </div>
 <div id="union-descriptions" class="section level2">
-<h2><span class="header-section-number">6.4</span> Union descriptions</h2>
+<h2><span class="header-section-number">5.4</span> Union descriptions</h2>
 <p>Union native range, pathway of introduction and invasion stage:</p>
 <pre class="r"><code>description_ext &lt;- bind_rows(native_range, pathway, invasion_stage)</code></pre>
 </div>
 <div id="term-mapping-3" class="section level2">
-<h2><span class="header-section-number">6.5</span> Term mapping</h2>
+<h2><span class="header-section-number">5.5</span> Term mapping</h2>
 <p>Map the data to <a href="http://rs.gbif.org/extension/gbif/1.0/description.xml">Taxon Description</a>.</p>
 <div id="taxonid-3" class="section level3">
-<h3><span class="header-section-number">6.5.1</span> taxonID</h3>
+<h3><span class="header-section-number">5.5.1</span> taxonID</h3>
 <pre class="r"><code>description_ext %&lt;&gt;% mutate(taxonID = raw_taxon_id)</code></pre>
 </div>
 <div id="description" class="section level3">
-<h3><span class="header-section-number">6.5.2</span> description</h3>
+<h3><span class="header-section-number">5.5.2</span> description</h3>
 <pre class="r"><code>description_ext %&lt;&gt;% mutate(description = description)</code></pre>
 </div>
 <div id="type" class="section level3">
-<h3><span class="header-section-number">6.5.3</span> type</h3>
+<h3><span class="header-section-number">5.5.3</span> type</h3>
 <pre class="r"><code>description_ext %&lt;&gt;% mutate(type = type)</code></pre>
 </div>
 <div id="language-2" class="section level3">
-<h3><span class="header-section-number">6.5.4</span> language</h3>
+<h3><span class="header-section-number">5.5.4</span> language</h3>
 <pre class="r"><code>description_ext %&lt;&gt;% mutate(language = &quot;en&quot;)</code></pre>
 </div>
 </div>
 <div id="post-processing-3" class="section level2">
-<h2><span class="header-section-number">6.6</span> Post-processing</h2>
+<h2><span class="header-section-number">5.6</span> Post-processing</h2>
 <p>Remove the original columns:</p>
 <pre class="r"><code>description_ext %&lt;&gt;% select(-starts_with(&quot;raw_&quot;))</code></pre>
 <p>Move <code>taxonID</code> to the first position:</p>
@@ -754,36 +752,36 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
   </script>
 </div>
 <p>Save to CSV:</p>
-<pre class="r"><code>write.csv(description_ext, file = dwc_description_file, na = &quot;&quot;, row.names = FALSE, fileEncoding = &quot;UTF-8&quot;)</code></pre>
+<pre class="r"><code>write_csv(description_ext, dwc_description_file, na = &quot;&quot;)</code></pre>
 </div>
 </div>
 <div id="create-species-profile-extension" class="section level1">
-<h1><span class="header-section-number">7</span> Create species profile extension</h1>
+<h1><span class="header-section-number">6</span> Create species profile extension</h1>
 <p>In this extension will express broad habitat characteristics of the species.</p>
 <pre class="r"><code>species_profile &lt;- raw_data</code></pre>
 <p>Habitat information can be found in <code>raw_habitat</code>. All taxa are considered to be freshwater fishes.</p>
 <div id="term-mapping-4" class="section level2">
-<h2><span class="header-section-number">7.1</span> Term mapping</h2>
+<h2><span class="header-section-number">6.1</span> Term mapping</h2>
 <p>Map the data to <a href="http://rs.gbif.org/extension/gbif/1.0/speciesprofile.xml">Species Profile</a>.</p>
 <div id="taxonid-4" class="section level3">
-<h3><span class="header-section-number">7.1.1</span> taxonID</h3>
+<h3><span class="header-section-number">6.1.1</span> taxonID</h3>
 <pre class="r"><code>species_profile %&lt;&gt;% mutate(taxonID = raw_taxon_id)</code></pre>
 </div>
 <div id="ismarine" class="section level3">
-<h3><span class="header-section-number">7.1.2</span> isMarine</h3>
+<h3><span class="header-section-number">6.1.2</span> isMarine</h3>
 <pre class="r"><code>species_profile %&lt;&gt;% mutate(isMarine = FALSE)</code></pre>
 </div>
 <div id="isfreshwater" class="section level3">
-<h3><span class="header-section-number">7.1.3</span> isFreshwater</h3>
+<h3><span class="header-section-number">6.1.3</span> isFreshwater</h3>
 <pre class="r"><code>species_profile %&lt;&gt;% mutate(isFreshwater = TRUE)</code></pre>
 </div>
 <div id="isterrestrial" class="section level3">
-<h3><span class="header-section-number">7.1.4</span> isTerrestrial</h3>
+<h3><span class="header-section-number">6.1.4</span> isTerrestrial</h3>
 <pre class="r"><code>species_profile %&lt;&gt;% mutate(isTerrestrial = &quot;FALSE&quot;)</code></pre>
 </div>
 </div>
 <div id="post-processing-4" class="section level2">
-<h2><span class="header-section-number">7.2</span> Post-processing</h2>
+<h2><span class="header-section-number">6.2</span> Post-processing</h2>
 <p>Remove the original columns:</p>
 <pre class="r"><code>species_profile %&lt;&gt;% select(-starts_with(&quot;raw_&quot;))</code></pre>
 <p>Sort on <code>taxonID</code>:</p>
@@ -796,7 +794,7 @@ raw_data %&lt;&gt;% mutate(taxon_id = paste(&quot;alien-fishes-checklist&quot;, 
   </script>
 </div>
 <p>Save to CSV:</p>
-<pre class="r"><code>write.csv(species_profile, file = dwc_profile_file, na = &quot;&quot;, row.names = FALSE, fileEncoding = &quot;UTF-8&quot;)</code></pre>
+<pre class="r"><code>write_csv(species_profile, dwc_profile_file, na = &quot;&quot;)</code></pre>
 </div>
 </div>
 
