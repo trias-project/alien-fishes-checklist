@@ -303,6 +303,106 @@ We use the [GBIF controlled vocabulary](http://rs.gbif.org/vocabulary/gbif/estab
 distribution %<>% mutate(establishmentMeans = "introduced")
 ```
 
+### degreeOfEstablishment
+
+Invasion stage information (e.g. `casual`) can be found in `raw_status`. 
+
+Create separate dataframe:
+
+Show unique values:
+
+```{r}
+distribution %>%
+  distinct(raw_status) %>%
+  arrange(raw_status)
+```
+
+* `A` and `A*` in the raw data file stand for `acclimatized` and refers to the status where the alien species has overcome the geographical barrier, the captivity/cultivation barrier and the survival barier, but where it fails to establish because individuals in the population fail to reproduce. This includes species (like Nile tilapia) in secluded warmer water of power plants. In Blackburn et al. (2011), this corresponds to the term `casual`.
+* `N` in the raw data file stands for `naturalized`. We decided **not to use** this term, because often, there's no sensible criterium to distinguish between casual/naturalised and naturalised/established. Thus, here, we consider all `naturalized` species to be `established`.
+
+```{r}
+distribution %<>% mutate(degreeOfEstablishment = case_when(
+  raw_status == "A" ~ "casual",
+  raw_status == "A*" ~ "casual",
+  raw_status == "N" ~ "established"
+))
+```
+
+### pathway
+
+Pathway information can be found in `raw_pathway_s`. Show unique values:
+
+```{r}
+distribution %>%
+  distinct(raw_pathway_s) %>%
+  arrange(raw_pathway_s)
+```
+
+`raw_pathway_s` contains multiple values (currently not more than 2), so we separate it in 2 columns:
+
+```{r}
+distribution %<>% separate(
+  raw_pathway_s,
+  into = c("pathway_1", "pathway_2"),
+  sep = ", ",
+  remove = FALSE,
+  convert = FALSE,
+  extra = "merge",
+  fill = "right"
+)
+```
+
+Gather in a `key` and `value` column:
+
+```{r}
+distribution %<>% gather(
+  key, value,
+  pathway_1, pathway_2,
+  na.rm = TRUE, # Also removes records for which there is no pathway_1
+  convert = FALSE
+)
+```
+
+This is a manually created overview of the abbreviations used in this dataset, their interpretation and the mapping to the CBD vocabulary:
+
+```{r, echo = FALSE}
+as.data.frame(matrix(data = c(
+  "AM", "Active Migration", "corridor_water",
+  "AN", "Angling/bait fish","escape_food_bait",
+  "AQ", "Aquaculture", "escape_aquaculture",
+  "BC", "Biological Control", "release_biologica_control",
+  "BW", "Ballast Water", "stowaway_ballast_water",
+  "OR", "Ornamental", "escape_ornamental",
+  "UN", "Unintentional", "Unintentional"),
+  nrow = 7, ncol = 3, byrow = TRUE,
+  dimnames = list(c(1:7), c("abbreviation", "full name", "CBD mapping"))
+))
+```
+
+Map values:
+
+```{r}
+distribution %<>% mutate(pathway = recode(value,
+  "AM" = "corridor",
+  "AN" = "liveFoodBait",
+  "AQ" = "aquacultureMariculture",
+  "BC" = "biologicalControl",
+  "BW" = "ballastWater",
+  "OR" = "pet",
+  "UN" = "unintentional"
+))
+```
+
+Show mapped values:
+
+```{r}
+distribution %>%
+  select(value, pathway) %>%
+  group_by_all() %>%
+  summarize(records = n()) %>%
+  arrange(value) 
+```
+
 ### eventDate
 
 The distribution information applies to a certain date range, which we will express here as an ISO 8601 date `yyyy/yyyy` (`start_year/end_year`).
@@ -324,10 +424,10 @@ distribution %<>% mutate(start_year = recode(start_year,
 ))
 ```
 
-As there is no `end_year` information, we'll consider the publication year of Verreycken et al. (2018) as the date when the presence of the species was last verified (even though all species are considered established and will probably be present after this year as well):
+As there is no `end_year` information, we'll leave this field empty:
 
 ```{r}
-distribution %<>% mutate(end_year = "2018")
+distribution %<>% mutate(end_year = "")
 ```
 
 Create `eventDate` by combining `start_year/end_year`:
@@ -349,7 +449,7 @@ distribution %>%
 Remove the original columns:
 
 ```{r}
-distribution %<>% select(-starts_with("raw_"), -start_year, -end_year)
+distribution %<>% select(-starts_with("raw_"), -start_year, -end_year, -key, -value)
 ```
 
 Preview data:
@@ -366,38 +466,42 @@ write_csv(distribution, dwc_distribution_file, na = "")
 
 # Create description extension
 
-In the description extension we want to include several important characteristics (hereafter refered to as descriptors) about the species:
+Map the data to [Taxon Description](http://rs.gbif.org/extension/gbif/1.0/description.xml).
 
-- Native range
-- Pathway of introduction
-- Invasion stage
+Create `description`:
 
-A single taxon can have multiple descriptions of the same type (e.g. multiple native ranges), expressed as multiple rows in the description extension.
-
-For each descriptor, we create a separate dataframe to process the specific information. We always specify _which descriptor_ we map (`type` column) and its _specific content_ (`description` column). After the mapping of these Darwin Core terms `type` and `value`, we merge the dataframes to generate one single description extension. We then continue the mapping process by adding the other Darwin Core terms (which content is independent of the type of descriptor, such as `language`).
-
-## Native range
-
-Native range information (e.g. `AS` for Asia) can be found in `raw_origin`.
-
-Create separate dataframe:
-
-```{r start_native_range}
-native_range <- raw_data
+```{r}
+description <- raw_data
 ```
+
+In the description extension we want to include the native range of the species.
+A single taxon can have multiple native ranges of the same type, expressed as multiple rows in the description extension. The mapping will be as following:
+
+- `type` = `native range`
+- `description` = the specific content of the field `raw_origin`
+- `language` = `en`
+
+## Term mapping
+
+### taxonID
+
+```{r}
+description %<>% mutate(taxonID = raw_taxon_id)
+```
+
+### description
 
 Show unique values:
 
 ```{r}
-native_range %>%
+description %>%
   distinct(raw_origin) %>%
   arrange(raw_origin)
 ```
-
 `raw_origin` contains multiple values (currently not more than 2), so we separate it on `" or "` in 2 columns:
 
 ```{r}
-native_range %<>% separate(raw_origin,
+description %<>% separate(raw_origin,
   into = c("native_range_1", "native_range_2"),
   sep = " or ",
   remove = FALSE,
@@ -410,7 +514,7 @@ native_range %<>% separate(raw_origin,
 Gather in a `key` and `value` column:
 
 ```{r}
-native_range %<>% gather(
+description %<>% gather(
   key, value,
   native_range_1, native_range_2,
   na.rm = TRUE, # Also removes records for which there is no native_range_1
@@ -421,7 +525,7 @@ native_range %<>% gather(
 Map values:
 
 ```{r}
-native_range %<>% mutate(mapped_value = recode(value,
+description %<>% mutate(mapped_value = recode(value,
   "AS" = "Asia",
   "EE" = "Eastern Europe",
   "AFR" = "Africa"))
@@ -430,7 +534,7 @@ native_range %<>% mutate(mapped_value = recode(value,
 Show mapped values:
 
 ```{r}
-native_range %>%
+description %>%
   select(value, mapped_value) %>%
   group_by_all() %>%
   summarize(records = n()) %>%
@@ -440,195 +544,23 @@ native_range %>%
 Drop the `key` and `value` columns and rename `mapped_value` as `description`:
 
 ```{r}
-native_range %<>%
+description %<>%
   select(-key, -value) %>%
   rename(description = mapped_value)
-```
-
-Create a `type` field to indicate the type of description:
-
-```{r}
-native_range %<>% mutate(type = "native range")
-```
-
-## Pathway of introduction
-
-Pathway information can be found in `raw_pathway_s`.
-
-Create separate dataframe:
-
-```{r start_pathway}
-pathway <- raw_data
-```
-
-Show unique values:
-
-```{r}
-native_range %>%
-  distinct(raw_pathway_s) %>%
-  arrange(raw_pathway_s)
-```
-
-`raw_pathway_s` contains multiple values (currently not more than 2), so we separate it in 2 columns:
-
-```{r}
-pathway %<>% separate(
-  raw_pathway_s,
-  into = c("pathway_1", "pathway_2"),
-  sep = ", ",
-  remove = FALSE,
-  convert = FALSE,
-  extra = "merge",
-  fill = "right"
-)
-```
-
-Gather in a `key` and `value` column:
-
-```{r}
-pathway %<>% gather(
-  key, value,
-  pathway_1, pathway_2,
-  na.rm = TRUE, # Also removes records for which there is no pathway_1
-  convert = FALSE
-)
-```
-
-We use the [CBD 2014 pathway vocabulary](https://www.cbd.int/doc/meetings/sbstta/sbstta-18/official/sbstta-18-09-add1-en.pdf) to standardize this information. The vocubulary has [these values](https://github.com/trias-project/vocab/tree/master/vocabulary/pathway).
-
-This is a manually created overview of the abbreviations used in this dataset, their interpretation and the mapping to the CBD vocabulary:
-
-```{r, echo = FALSE}
-as.data.frame(matrix(data = c(
-  "AM", "Active Migration", "corridor_water",
-  "AN", "Angling/bait fish","escape_food_bait",
-  "AQ", "Aquaculture", "escape_aquaculture",
-  "BC", "Biological Control", "release_biologica_control",
-  "BW", "Ballast Water", "stowaway_ballast_water",
-  "OR", "Ornamental", "escape_ornamental",
-  "UN", "Unintentional", "Unintentional"),
-  nrow = 7, ncol = 3, byrow = TRUE,
-  dimnames = list(c(1:7), c("abbreviation", "full name", "CBD mapping"))
-))
-```
-
-Map values:
-
-```{r}
-pathway %<>% mutate(mapped_value = recode(value,
-  "AM" = "corridor_water",
-  "AN" = "escape_food_bait",
-  "AQ" = "escape_aquaculture",
-  "BC" = "release_biological_control",
-  "BW" = "stowaway_ballast_water",
-  "OR" = "escape_ornamental",
-  "UN" = "unintentional" # Not part of CBD
-))
-```
-
-Add the prefix `cbd_2014_pathway:` to refer to this standard, except for `unintentional`, which has no alternative in the standard:
-
-```{r}
-pathway %<>% mutate(mapped_value = case_when (
-  mapped_value != "unintentional" ~ paste("cbd_2014_pathway", mapped_value, sep = ":"),
-  mapped_value == "unintentional" ~ mapped_value))
-```
-
-Show mapped values:
-
-```{r}
-pathway %>%
-  select(value, mapped_value) %>%
-  group_by_all() %>%
-  summarize(records = n()) %>%
-  arrange(value) 
-```
-
-Drop the `key` and `value` columns and rename `mapped_value` as `description`:
-
-```{r}
-pathway %<>%
-  select(-key, -value) %>%
-  rename(description = mapped_value)
-```
-
-Create a `type` field to indicate the type of description:
-
-```{r}
-pathway %<>% mutate(type = "pathway")
-```
-
-## Invasion stage
-
-Invasion stage information (e.g. `casual`) can be found in `raw_status`. 
-
-Create separate dataframe:
-
-```{r start_invasion_stage}
-invasion_stage <- raw_data
-```
-
-Show unique values:
-
-```{r}
-native_range %>%
-  distinct(raw_status) %>%
-  arrange(raw_status)
-```
-
-We use the [invasion stage vocabulary from Blackburn et al. (2011)](http://doc.rero.ch/record/24725/files/bach_puf.pdf) to standardize this information.
-
-* `A` and `A*` in the raw data file stand for `acclimatized` and refers to the status where the alien species has overcome the geographical barrier, the captivity/cultivation barrier and the survival barier, but where it fails to establish because individuals in the population fail to reproduce. This includes species (like Nile tilapia) in secluded warmer water of power plants. In Blackburn et al. (2011), this corresponds to the term `casual`.
-* `N` in the raw data file stands for `naturalized`. We decided **not to use** this term, because often, there's no sensible criterium to distinguish between casual/naturalised and naturalised/established. Thus, here, we consider all `naturalized` species to be `established`.
-
-```{r}
-invasion_stage %<>% mutate(description = case_when(
-  raw_status == "A" ~ "casual",
-  raw_status == "A*" ~ "casual",
-  raw_status == "N" ~ "established"
-))
-```
-
-Create a `type` field to indicate the type of description:
-
-```{r}
-invasion_stage %<>% mutate(type = "invasion stage")
-```
-
-## Union descriptions
-
-Union native range, pathway of introduction and invasion stage:
-
-```{r start_description_ext}
-description_ext <- bind_rows(native_range, pathway, invasion_stage)
-```
-
-## Term mapping
-
-Map the data to [Taxon Description](http://rs.gbif.org/extension/gbif/1.0/description.xml).
-
-### taxonID
-
-```{r}
-description_ext %<>% mutate(taxonID = raw_taxon_id)
-```
-
-### description
-
-```{r}
-description_ext %<>% mutate(description = description)
 ```
 
 ### type
+ 
+Create a `type` field to indicate the type of description:
 
 ```{r}
-description_ext %<>% mutate(type = type)
+description %<>% mutate(type = "native range")
 ```
 
 ### language
 
 ```{r}
-description_ext %<>% mutate(language = "en")
+description %<>% mutate(language = "en")
 ```
 
 ## Post-processing
@@ -636,31 +568,31 @@ description_ext %<>% mutate(language = "en")
 Remove the original columns:
 
 ```{r}
-description_ext %<>% select(-starts_with("raw_"))
+description %<>% select(-starts_with("raw_"))
 ```
 
 Move `taxonID` to the first position:
 
 ```{r}
-description_ext %<>% select(taxonID, everything())
+description %<>% select(taxonID, everything())
 ```
 
 Sort on `taxonID` to group description information per taxon:
 
 ```{r}
-description_ext %<>% arrange(taxonID)
+description %<>% arrange(taxonID)
 ```
 
 Preview data:
 
 ```{r}
-description_ext %>% head(10)
+description %>% head(10)
 ```
 
 Save to CSV:
 
 ```{r}
-write_csv(description_ext, dwc_description_file, na = "")
+write_csv(description, dwc_description_file, na = "")
 ```
 
 # Create species profile extension
