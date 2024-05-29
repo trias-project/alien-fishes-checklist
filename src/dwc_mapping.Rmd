@@ -79,10 +79,10 @@ taxon <-
     language = "en",
     license = "http://creativecommons.org/publicdomain/zero/1.0/",
     rightsHolder = "INBO",
-    accessRights = "http://www.inbo.be/en/norms-for-data-use", #"https://www.inbo.be/en/norms-data-use",
+    accessRights = "https://www.inbo.be/en/norms-data-use", 
     datasetID = "https://doi.org/10.15468/xvuzfh",
     institutionCode = "INBO",
-    datasetName = "Checklist of non-native freshwater fishes in Flanders, Belgium", # Add capital later
+    datasetName = "Checklist of non-native freshwater fishes in Flanders, Belgium", 
     taxonID = taxon_id,
     scientificName = scientific_name,
     kingdom = kingdom,
@@ -94,17 +94,12 @@ taxon <-
     nomenclaturalCode = nomenclatural_code,
     .keep = "none"
   ) %>% 
- # dplyr::arrange(taxonID) %>% 
-  # dplyr::select(
-  #   "language", "license", "rightsHolder", "accessRights", "datasetID",
-  #   "institutionCode", "datasetName", "taxonID", "scientificName", "kingdom", 
-  #   "phylum", "order", "family", "genus", "taxonRank", "nomenclaturalCode"
-  # )
-  dplyr::select(
-    "language", "license", "rightsHolder", "accessRights", "datasetID",
-    "datasetName", "taxonID", "scientificName", "kingdom", 
-    "taxonRank", "nomenclaturalCode"
-  )
+ dplyr::arrange(taxonID) %>%
+ dplyr::select(
+   "language", "license", "rightsHolder", "accessRights", "datasetID",
+   "institutionCode", "datasetName", "taxonID", "scientificName", "kingdom",
+   "phylum", "order", "family", "genus", "taxonRank", "nomenclaturalCode"
+ )
 ```
 
 # Create vernacular names extension
