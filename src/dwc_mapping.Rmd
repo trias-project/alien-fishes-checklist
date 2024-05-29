@@ -391,7 +391,8 @@ distribution %<>% mutate(pathway = recode(value,
   "BW" = "ballastWater",
   "OR" = "pet",
   "UN" = "unintentional"
-))
+)) %>% 
+  arrange(taxonID)
 ```
 
 Show mapped values:
@@ -547,7 +548,8 @@ Drop the `key` and `value` columns and rename `mapped_value` as `description`:
 ```{r}
 description %<>%
   select(-key, -value) %>%
-  rename(description = mapped_value)
+  rename(description = mapped_value) %>% 
+  arrange(taxonID)
 ```
 
 ### type
