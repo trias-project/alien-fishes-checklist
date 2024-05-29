@@ -129,6 +129,10 @@ vernacular_names <-
 Map the data to [Species Distribution](http://rs.gbif.org/extension/gbif/1.0/distribution.xml).
 
 ```{r distribution}
+# define current year
+year_publication <- format(Sys.Date(), "%Y")
+
+# dwc mapping
 distribution <-
   input_data %>% 
   dplyr::mutate(
@@ -148,14 +152,16 @@ distribution <-
     establishmentMeans = "introduced",
     degreeOfEstablishment = degree_of_establishment,
     pathway = introduction_pathway, 
-    eventDate = dplyr::recode( # need to be updated
+    eventDate = dplyr::recode( 
       date_first_observation,
       "20xx" = "2000",
       "17th c." = "1601",
       "1980s" = "1980",
       "13th c." = "1201"
     ),
-    eventDate = paste0(eventDate, "/"),
+    eventDate = paste0(eventDate, "/"), # need to be updated
+    source = source,
+    occurrenceRemarks = remarks,
     .keep = "none"
   ) %>% 
   dplyr::mutate(pathway = strsplit(as.character(pathway), " ")) %>% 
