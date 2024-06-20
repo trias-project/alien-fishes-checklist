@@ -32,45 +32,26 @@ library(here)
 Read the relevant worksheet (published as csv) and Copy the source data to the repository to keep track of changes.
 
 ```{r read_source_data}
-input_data <-read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSXWde261c45tj0pIMeESy15M3BMogW-1Q-92a4m7A8aKtztHi4JPKEJHDSjEHYHGjQ6de1z27avnOs/pub?gid=0&single=true&output=csv", na = "NA")
+raw_data <-read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSXWde261c45tj0pIMeESy15M3BMogW-1Q-92a4m7A8aKtztHi4JPKEJHDSjEHYHGjQ6de1z27avnOs/pub?gid=0&single=true&output=csv", na = "NA")
 readr::write_csv(input_data, here("data", "raw", "alien_fisches_checklist_dump.csv"), na = "")
 ```
+# Preprocessing: tidy data and add taxon ID's
 
-# Preprocessing
+To link taxa with information in the extension(s), each taxon needs a unique and relatively stable `taxonID`. We have created one in the form of `dataset_shortname:taxon:hash`, where `hash` is unique code based on scientific name and kingdom. Once this is created, it is added to the source data. 
 
-## Tidy data
-
-```{r tidy}
-input_data %<>%
-  janitor::remove_empty("rows") %>% # Remove empty rows
-  janitor::clean_names() %>% # Have sensible (lowercase) column names
+```{r}
+input_data <-
+  raw_data %>%
+  remove_empty("rows") %>%
+  clean_names() %>%
   mutate(
-    date_first_observation = dplyr::recode(
-      date_first_observation,
-      "20xx" = "2000",
-      "17th c." = "1601",
-      "1980s" = "1980",
-      "13th c." = "1201"
+    taxon_id = paste(
+      "alien-fishes-checklist",
+      "taxon",
+      .data$taxon_id_hash,
+      sep = ":"
     )
   )
-```
-
-## Taxon IDs
-
-To link taxa with information in the extension(s), each taxon needs a unique and relatively stable `taxonID`. We have created one in the form of `dataset_shortname:taxon:hash`, where `hash` is unique code based on scientific name and kingdom. Once this is created, it is added to the source data.
-
-```{r taxon_id}
-vdigest <- Vectorize(digest) # Vectorize digest function to work with vectors
-input_data %<>% 
-  dplyr::mutate(
-    taxon_id = 
-      paste(
-        "alien-fishes-checklist",
-        "taxon",
-        .data$taxon_id_hash,
-        sep = ":"
-        )
-    )
 ```
 
 # Darwin Core mapping
