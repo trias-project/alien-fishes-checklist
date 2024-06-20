@@ -139,7 +139,18 @@ Map the data to [Species Distribution](http://rs.gbif.org/extension/gbif/1.0/dis
 ```{r distribution}
 # dwc mapping
 distribution <-
-  input_data %>% 
+  input_data %>%
+  # pathway
+  pivot_longer(
+    names_to = "key",
+    values_to = "pathway",
+    starts_with("introduction_pathway"),
+    values_drop_na = FALSE) %>%
+  filter( # keep NA value for species with no pathway provided
+    !is.na(pathway) |
+      (is.na(pathway) & key == "introduction_pathway_1")
+    ) %>%
+  # other terms
   dplyr::mutate(
     taxonID = taxon_id,
     locationID = dplyr::case_when(
@@ -156,7 +167,7 @@ distribution <-
     occurrenceStatus = occurrence_status,
     establishmentMeans = "introduced",
     degreeOfEstablishment = degree_of_establishment,
-    pathway = old_introduction_pathway_will_be_deleted_check_if_mapping_is_ok,
+    pathway = pathway,
     eventDate = case_when(
       is.na(date_first_observation) & is.na(date_last_observation) ~ NA,
       is.na(date_first_observation) ~ paste0("/", date_last_observation),
@@ -166,11 +177,7 @@ distribution <-
     ),
     source = source,
     occurrenceRemarks = remarks,
-    .keep = "none") %>% 
-  dplyr::mutate(pathway = strsplit(as.character(pathway), " ")) %>% 
-  tidyr::unnest(pathway) %>% 
-  dplyr::filter(pathway != "|") %>% 
-  dplyr::arrange(taxonID) %>% 
+    .keep = "none") %>%
   select(
     "taxonID", "locationID", "locality", "countryCode", "occurrenceStatus",
     "establishmentMeans", "degreeOfEstablishment", "pathway", 
