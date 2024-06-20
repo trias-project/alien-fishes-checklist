@@ -138,9 +138,6 @@ vernacular_names <-
 Map the data to [Species Distribution](http://rs.gbif.org/extension/gbif/1.0/distribution.xml).
 
 ```{r distribution}
-# define current year
-year_publication <- format(Sys.Date(), "%Y")
-
 # dwc mapping
 distribution <-
   input_data %>% 
