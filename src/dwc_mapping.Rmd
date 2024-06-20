@@ -174,26 +174,6 @@ distribution <-
   ) 
 ```
 
-# Create description extension
-
-Map the data to [Taxon Description](http://rs.gbif.org/extension/gbif/1.0/description.xml).
-`raw_origin` contains multiple values (currently not more than 2), so we separate it on `" or "` in 2 columns.
-
-```{r description}
-description <- 
-  input_data %>% 
-  dplyr::filter(!is.na(native_range)) %>% 
-  dplyr::mutate(
-    taxonID = taxon_id,
-    description = strsplit(as.character(native_range), " or "),
-    type = "native range",
-    language = "en",
-    .keep = "none"
-  ) %>% 
-  tidyr::unnest(description) %>% 
-  dplyr::arrange(taxonID) 
-```
-
 ## Species profile extension
 
 In this extension we will express broad habitat characteristics of the species (e.g. `isTerrestrial`).
@@ -219,6 +199,30 @@ species_profile <-
     isFreshwater = freshwater,
     isTerrestrial = terrestrial
   ) %>% 
+  arrange(taxonID)
+```
+
+## Description extension
+
+In the description extension we want to include the native range of a species
+
+```{r}
+description <-
+  input_data %>% 
+  # unique taxa only (ignoring multiple distribution rows)
+  distinct(taxon_id, .keep_all = TRUE) %>% 
+  # Separate values on `|` 
+  mutate(native_range = strsplit(native_range, "\\|")) %>% 
+  unnest(native_range) %>% 
+  filter(!is.na(native_range)) %>% 
+  mutate(
+    .keep = "none",
+    taxonID = taxon_id,
+    description = str_trim(native_range),
+    type = "native range",
+    language = "en"
+    ) %>% 
+  select("taxonID", "description", "type", "language") %>% 
   arrange(taxonID)
 ```
 
