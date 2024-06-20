@@ -43,8 +43,17 @@ readr::write_csv(input_data, here("data", "raw", "alien_fisches_checklist_dump.c
 
 ```{r tidy}
 input_data %<>%
-  janitor::remove_empty("rows") %>%    # Remove empty rows
-  janitor::clean_names()               # Have sensible (lowercase) column names
+  janitor::remove_empty("rows") %>% # Remove empty rows
+  janitor::clean_names() %>% # Have sensible (lowercase) column names
+  mutate(
+    date_first_observation = dplyr::recode(
+      date_first_observation,
+      "20xx" = "2000",
+      "17th c." = "1601",
+      "1980s" = "1980",
+      "13th c." = "1201"
+    )
+  )
 ```
 
 ## Taxon IDs
@@ -152,14 +161,13 @@ distribution <-
     establishmentMeans = "introduced",
     degreeOfEstablishment = degree_of_establishment,
     pathway = introduction_pathway, 
-    eventDate = dplyr::recode( 
-      date_first_observation,
-      "20xx" = "2000",
-      "17th c." = "1601",
-      "1980s" = "1980",
-      "13th c." = "1201"
+    eventDate = case_when(
+      is.na(date_first_observation) & is.na(date_last_observation) ~ NA,
+      is.na(date_first_observation) ~ paste0("/", date_last_observation),
+      is.na(date_last_observation) ~ paste0(date_first_observation, "/"),
+      !is.na(date_first_observation) & !is.na(date_last_observation) ~ 
+        paste(date_first_observation, date_last_observation, sep = "/")
     ),
-    eventDate = paste0(eventDate, "/"), # need to be updated
     source = source,
     occurrenceRemarks = remarks,
     .keep = "none"
