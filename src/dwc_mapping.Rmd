@@ -152,9 +152,9 @@ distribution <-
       location == "Wallonia" ~ "Walloon Region",
       location == "Brussels" ~ "Brussels-Capital Region"
     ),
-    countryCode = "BE",
+    countryCode = country_code,
     occurrenceStatus = occurrence_status,
-    establishmentMeans = "introduced",
+    establishmentMeans = "introduced" #establishment_means,
     degreeOfEstablishment = degree_of_establishment,
     pathway = pathway,
     eventDate = case_when(
