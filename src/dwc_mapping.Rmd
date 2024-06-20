@@ -208,7 +208,6 @@ species_profile <-
     .keep = "none"
   ) %>% 
   dplyr::arrange(taxonID)
-#estuarine is missing?
 ```
 
 # Save to CSV:
