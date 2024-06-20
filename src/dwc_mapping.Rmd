@@ -11,7 +11,7 @@ output:
 ---
 
 This script prepares checklist data for publication on GBIF. The source file for this document can be found [here](https://github.com/trias-project/alien-fishes-checklist/blob/master/src/dwc_mapping.Rmd).
-It downloads the checklist data from [this Google Spreadsheet](https://docs.google.com/spreadsheets/d/1ViuIWMhDJ-drs2PkunC4DOrNSaNwleuWR1imUU4KzVA/edit#gid=315843027), where these data are maintained. The script transforms the data to a [Darwin Core checklist](https://www.gbif.org/dataset-classes) that can be harvested by [GBIF](http://www.gbif.org). It was developed for the [TrIAS project](http://trias-project.be).
+It downloads the checklist data from [this Google Spreadsheet](https://docs.google.com/spreadsheets/d/1LeXXbry2ArK2rngsmFjz_xErwE1KwQ8ujtvHNmTVA6E/edit#gid=961223689), where these data are maintained. The script transforms the data to a [Darwin Core checklist](https://www.gbif.org/dataset-classes) that can be harvested by [GBIF](http://www.gbif.org). It was developed for the [TrIAS project](http://trias-project.be).
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
@@ -32,7 +32,7 @@ library(here)
 Read the relevant worksheet (published as csv) and Copy the source data to the repository to keep track of changes.
 
 ```{r read_source_data}
-raw_data <-read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSXWde261c45tj0pIMeESy15M3BMogW-1Q-92a4m7A8aKtztHi4JPKEJHDSjEHYHGjQ6de1z27avnOs/pub?gid=0&single=true&output=csv", na = "NA")
+raw_data <-read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTl8IEk2fProQorMu5xKQPdMXl3OQp-c0f6eBXitv0BiVFZ3JSJCde0PtbFXuETgguf6vK8b43FDX1C/pub?gid=1963824857&single=true&output=csv", na = "NA")
 readr::write_csv(input_data, here("data", "raw", "alien_fisches_checklist_dump.csv"), na = "")
 ```
 # Preprocessing: tidy data and add taxon ID's
@@ -154,7 +154,7 @@ distribution <-
     ),
     countryCode = country_code,
     occurrenceStatus = occurrence_status,
-    establishmentMeans = "introduced" #establishment_means,
+    establishmentMeans = establishment_means,
     degreeOfEstablishment = degree_of_establishment,
     pathway = pathway,
     eventDate = case_when(
@@ -165,7 +165,7 @@ distribution <-
         paste(date_first_observation, date_last_observation, sep = "/")
     ),
     source = source,
-    occurrenceRemarks = remarks,
+    occurrenceRemarks = occurrence_remarks,
     .keep = "none") %>%
   select(
     "taxonID", "locationID", "locality", "countryCode", "occurrenceStatus",
