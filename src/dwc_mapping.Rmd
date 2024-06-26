@@ -33,7 +33,7 @@ Read the relevant worksheet (published as csv) and Copy the source data to the r
 
 ```{r read_source_data}
 raw_data <-read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTl8IEk2fProQorMu5xKQPdMXl3OQp-c0f6eBXitv0BiVFZ3JSJCde0PtbFXuETgguf6vK8b43FDX1C/pub?gid=1963824857&single=true&output=csv", na = "NA")
-readr::write_csv(input_data, here("data", "raw", "alien_fisches_checklist_dump.csv"), na = "")
+readr::write_csv(raw_data, here("data", "raw", "alien_fisches_checklist_dump.csv"), na = "")
 ```
 # Preprocessing: tidy data and add taxon ID's
 
