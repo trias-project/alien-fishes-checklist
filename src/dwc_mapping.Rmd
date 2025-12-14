@@ -226,7 +226,7 @@ description <-
   arrange(taxonID)
 ```
 
-# Save to CSV:
+# Save to CSV
 
 ```{r}
 readr::write_csv(taxon, file = here::here("data", "processed", "taxon.csv"), na = "")
