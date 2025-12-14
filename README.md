@@ -29,8 +29,6 @@ The repository structure is based on [Cookiecutter Data Science](http://drivenda
 │
 ├── docs              : Repository website GENERATED
 │
-├── specification   : Data specifications for the Darwin Core files
-│
 └── src
     ├── dwc_mapping.Rmd : Darwin Core mapping script, core functionality of this repository
     ├── _site.yml          : Settings to build website in docs/

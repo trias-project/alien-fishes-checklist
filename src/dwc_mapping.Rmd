@@ -8,10 +8,14 @@ author:
 date: "`r Sys.Date()`"
 output:
   html_document:
+    df_print: paged
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
 ---
 
 This script prepares checklist data for publication on GBIF. The source file for this document can be found [here](https://github.com/trias-project/alien-fishes-checklist/blob/master/src/dwc_mapping.Rmd).
-It downloads the checklist data from [this Google Spreadsheet](https://docs.google.com/spreadsheets/d/1LeXXbry2ArK2rngsmFjz_xErwE1KwQ8ujtvHNmTVA6E/edit#gid=961223689), where these data are maintained. The script transforms the data to a [Darwin Core checklist](https://www.gbif.org/dataset-classes) that can be harvested by [GBIF](http://www.gbif.org). It was developed for the [TrIAS project](http://trias-project.be).
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
@@ -29,12 +33,20 @@ library(here)
 
 # Read source data
 
-Read the relevant worksheet (published as csv) and Copy the source data to the repository to keep track of changes.
+The data are maintained in [this Google Spreadsheet](https://docs.google.com/spreadsheets/d/1LeXXbry2ArK2rngsmFjz_xErwE1KwQ8ujtvHNmTVA6E/edit#gid=961223689).
+
+Read the relevant worksheet (published as csv):
 
 ```{r read_source_data}
 raw_data <-read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTl8IEk2fProQorMu5xKQPdMXl3OQp-c0f6eBXitv0BiVFZ3JSJCde0PtbFXuETgguf6vK8b43FDX1C/pub?gid=1963824857&single=true&output=csv", na = "NA")
-readr::write_csv(raw_data, here("data", "raw", "alien_fisches_checklist_dump.csv"), na = "")
 ```
+
+Copy the source data to the repository to keep track of changes:
+
+```{r}
+readr::write_csv(raw_data, here("data", "raw", "alien_fishes_checklist_dump.csv"), na = "")
+```
+
 # Preprocessing: tidy data and add taxon ID's
 
 To link taxa with information in the extension(s), each taxon needs a unique and relatively stable `taxonID`. We have created one in the form of `dataset_shortname:taxon:hash`, where `hash` is unique code based on scientific name and kingdom. Once this is created, it is added to the source data. 
@@ -226,7 +238,7 @@ description <-
   arrange(taxonID)
 ```
 
-# Save to CSV:
+# Save to CSV
 
 ```{r}
 readr::write_csv(taxon, file = here::here("data", "processed", "taxon.csv"), na = "")

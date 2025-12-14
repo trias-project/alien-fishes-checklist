@@ -1,5 +1,5 @@
 ---
-title: ""
+title: "Checklist of non-native freshwater fishes in Flanders, Belgium"
 ---
 
 ```{r, child = "../README.md"}

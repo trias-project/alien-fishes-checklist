@@ -13,14 +13,14 @@
 <meta name="author" content="Peter Desmet" />
 <meta name="author" content="Sanne Govaert" />
 
-<meta name="date" content="2024-05-29" />
+<meta name="date" content="2025-12-14" />
 
 <title>Darwin Core mapping</title>
 
-<script src="site_libs/header-attrs-2.26/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<link href="site_libs/bootstrap-3.3.5/css/yeti.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
@@ -33,11 +33,16 @@
        h6 {font-size: 12px;}
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
-<link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
+<link href="site_libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
+<script src="site_libs/pagedtable-1.1/js/pagedtable.js"></script>
+<link href="site_libs/font-awesome-6.5.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet" />
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -64,6 +69,7 @@ if (window.hljs) {
 
 
 
+<link rel="stylesheet" href="static/css/trias.css" type="text/css" />
 
 
 
@@ -225,6 +231,69 @@ $(document).ready(function () {
 
 
 
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
 
 </head>
 
@@ -232,6 +301,16 @@ $(document).ready(function () {
 
 
 <div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -274,69 +353,57 @@ Flanders, Belgium</h3>
 <h4 class="author">Lien Reyserhove</h4>
 <h4 class="author">Peter Desmet</h4>
 <h4 class="author">Sanne Govaert</h4>
-<h4 class="date">2024-05-29</h4>
+<h4 class="date">2025-12-14</h4>
 
 </div>
 
 
 <p>This script prepares checklist data for publication on GBIF. The
 source file for this document can be found <a
-href="https://github.com/trias-project/alien-fishes-checklist/blob/master/src/dwc_mapping.Rmd">here</a>.
-It downloads the checklist data from <a
-href="https://docs.google.com/spreadsheets/d/1ViuIWMhDJ-drs2PkunC4DOrNSaNwleuWR1imUU4KzVA/edit#gid=315843027">this
-Google Spreadsheet</a>, where these data are maintained. The script
-transforms the data to a <a
-href="https://www.gbif.org/dataset-classes">Darwin Core checklist</a>
-that can be harvested by <a href="http://www.gbif.org">GBIF</a>. It was
-developed for the <a href="http://trias-project.be">TrIAS
-project</a>.</p>
+href="https://github.com/trias-project/alien-fishes-checklist/blob/master/src/dwc_mapping.Rmd">here</a>.</p>
 <p>Load libraries:</p>
 <pre class="r"><code>library(tidyverse)
 library(magrittr)
 library(janitor)
 library(digest)
 library(here)</code></pre>
-<div id="read-source-data" class="section level1">
-<h1>Read source data</h1>
-<p>Read the relevant worksheet (published as csv) and Copy the source
-data to the repository to keep track of changes.</p>
-<pre class="r"><code>#input_data &lt;-read_csv(&quot;https://docs.google.com/spreadsheets/d/e/2PACX-1vSXWde261c45tj0pIMeESy15M3BMogW-1Q-92a4m7A8aKtztHi4JPKEJHDSjEHYHGjQ6de1z27avnOs/pub?gid=0&amp;single=true&amp;output=csv&quot;, na = &quot;NA&quot;)
-input_data &lt;-read_csv(&quot;../data/raw/Checklist alien freshwater fishes - Checklist.csv&quot;, na = &quot;NA&quot;)
-readr::write_csv(input_data, here(&quot;data&quot;, &quot;raw&quot;, &quot;alien_fisches_checklist_dump.csv&quot;), na = &quot;&quot;)</code></pre>
+<div id="read-source-data" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Read source data</h1>
+<p>The data are maintained in <a
+href="https://docs.google.com/spreadsheets/d/1LeXXbry2ArK2rngsmFjz_xErwE1KwQ8ujtvHNmTVA6E/edit#gid=961223689">this
+Google Spreadsheet</a>.</p>
+<p>Read the relevant worksheet (published as csv):</p>
+<pre class="r"><code>raw_data &lt;-read_csv(&quot;https://docs.google.com/spreadsheets/d/e/2PACX-1vTl8IEk2fProQorMu5xKQPdMXl3OQp-c0f6eBXitv0BiVFZ3JSJCde0PtbFXuETgguf6vK8b43FDX1C/pub?gid=1963824857&amp;single=true&amp;output=csv&quot;, na = &quot;NA&quot;)</code></pre>
+<p>Copy the source data to the repository to keep track of changes:</p>
+<pre class="r"><code>readr::write_csv(raw_data, here(&quot;data&quot;, &quot;raw&quot;, &quot;alien_fishes_checklist_dump.csv&quot;), na = &quot;&quot;)</code></pre>
 </div>
-<div id="preprocessing" class="section level1">
-<h1>Preprocessing</h1>
-<div id="tidy-data" class="section level2">
-<h2>Tidy data</h2>
-<pre class="r"><code>input_data %&lt;&gt;%
-  janitor::remove_empty(&quot;rows&quot;) %&gt;%    # Remove empty rows
-  janitor::clean_names()               # Have sensible (lowercase) column names</code></pre>
-</div>
-<div id="taxon-ids" class="section level2">
-<h2>Taxon IDs</h2>
+<div id="preprocessing-tidy-data-and-add-taxon-ids"
+class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Preprocessing: tidy
+data and add taxon ID’s</h1>
 <p>To link taxa with information in the extension(s), each taxon needs a
-unique and relatively stable <code>taxonID</code>. Here we create one in
-the form of <code>dataset_shortname:taxon:hash</code>, where
-<code>hash</code> is unique code based on scientific name and kingdom
-(that will remain the same as long as scientific name and kingdom remain
-the same):</p>
-<pre class="r"><code>vdigest &lt;- Vectorize(digest) # Vectorize digest function to work with vectors
-input_data %&lt;&gt;% 
-  dplyr::mutate(
-    taxon_id = 
-      paste(
-        &quot;alien-fishes-checklist&quot;,
-        &quot;taxon&quot;,
-        vdigest(paste(scientific_name), algo = &quot;md5&quot;),
-        sep = &quot;:&quot;
-        )
-    )</code></pre>
+unique and relatively stable <code>taxonID</code>. We have created one
+in the form of <code>dataset_shortname:taxon:hash</code>, where
+<code>hash</code> is unique code based on scientific name and kingdom.
+Once this is created, it is added to the source data.</p>
+<pre class="r"><code>input_data &lt;-
+  raw_data %&gt;%
+  remove_empty(&quot;rows&quot;) %&gt;%
+  clean_names() %&gt;%
+  mutate(
+    taxon_id = paste(
+      &quot;alien-fishes-checklist&quot;,
+      &quot;taxon&quot;,
+      .data$taxon_id_hash,
+      sep = &quot;:&quot;
+    )
+  )</code></pre>
 </div>
-</div>
-<div id="darwin-core-mapping" class="section level1">
-<h1>Darwin Core mapping</h1>
-<div id="taxon-core" class="section level2">
-<h2>Taxon core</h2>
+<div id="darwin-core-mapping" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Darwin Core
+mapping</h1>
+<div id="taxon-core" class="section level2" number="3.1">
+<h2><span class="header-section-number">3.1</span> Taxon core</h2>
 <p>Create a dataframe with unique taxa only (ignoring multiple
 distribution rows). Map the data to <a
 href="http://rs.gbif.org/core/dwc_taxon_2015-04-24.xml">Darwin Core
@@ -348,10 +415,10 @@ Taxon</a>.</p>
     language = &quot;en&quot;,
     license = &quot;http://creativecommons.org/publicdomain/zero/1.0/&quot;,
     rightsHolder = &quot;INBO&quot;,
-    accessRights = &quot;http://www.inbo.be/en/norms-for-data-use&quot;, #&quot;https://www.inbo.be/en/norms-data-use&quot;,
+    accessRights = &quot;https://www.inbo.be/en/norms-data-use&quot;, 
     datasetID = &quot;https://doi.org/10.15468/xvuzfh&quot;,
     institutionCode = &quot;INBO&quot;,
-    datasetName = &quot;Checklist of non-native freshwater fishes in Flanders, Belgium&quot;, # Add capital later
+    datasetName = &quot;Checklist of non-native freshwater fishes in Flanders, Belgium&quot;, 
     taxonID = taxon_id,
     scientificName = scientific_name,
     kingdom = kingdom,
@@ -363,21 +430,18 @@ Taxon</a>.</p>
     nomenclaturalCode = nomenclatural_code,
     .keep = &quot;none&quot;
   ) %&gt;% 
- # dplyr::arrange(taxonID) %&gt;% 
-  # dplyr::select(
-  #   &quot;language&quot;, &quot;license&quot;, &quot;rightsHolder&quot;, &quot;accessRights&quot;, &quot;datasetID&quot;,
-  #   &quot;institutionCode&quot;, &quot;datasetName&quot;, &quot;taxonID&quot;, &quot;scientificName&quot;, &quot;kingdom&quot;, 
-  #   &quot;phylum&quot;, &quot;order&quot;, &quot;family&quot;, &quot;genus&quot;, &quot;taxonRank&quot;, &quot;nomenclaturalCode&quot;
-  # )
-  dplyr::select(
-    &quot;language&quot;, &quot;license&quot;, &quot;rightsHolder&quot;, &quot;accessRights&quot;, &quot;datasetID&quot;,
-    &quot;datasetName&quot;, &quot;taxonID&quot;, &quot;scientificName&quot;, &quot;kingdom&quot;, 
-    &quot;taxonRank&quot;, &quot;nomenclaturalCode&quot;
-  )</code></pre>
+ dplyr::arrange(taxonID) %&gt;%
+ dplyr::select(
+   &quot;language&quot;, &quot;license&quot;, &quot;rightsHolder&quot;, &quot;accessRights&quot;, &quot;datasetID&quot;,
+   &quot;institutionCode&quot;, &quot;datasetName&quot;, &quot;taxonID&quot;, &quot;scientificName&quot;, &quot;kingdom&quot;,
+   &quot;phylum&quot;, &quot;order&quot;, &quot;family&quot;, &quot;genus&quot;, &quot;taxonRank&quot;, &quot;nomenclaturalCode&quot;
+ )</code></pre>
 </div>
 </div>
-<div id="create-vernacular-names-extension" class="section level1">
-<h1>Create vernacular names extension</h1>
+<div id="create-vernacular-names-extension" class="section level1"
+number="4">
+<h1><span class="header-section-number">4</span> Create vernacular names
+extension</h1>
 <p>Map the data to <a
 href="http://rs.gbif.org/extension/gbif/1.0/vernacularname.xml">Vernacular
 Names</a>. Vernacular names are available in two languages: English
@@ -401,13 +465,42 @@ generate a single column containing the vernacular name
   dplyr::select(taxonID, vernacularName, language) %&gt;% 
   dplyr::arrange(taxonID)</code></pre>
 </div>
-<div id="create-distribution-extension" class="section level1">
-<h1>Create distribution extension</h1>
-<p>Map the data to <a
+<div id="create-distribution-extension" class="section level1"
+number="5">
+<h1><span class="header-section-number">5</span> Create distribution
+extension</h1>
+<p>Create a dataframe with all data (including multiple distributions).
+Map the data to <a
 href="http://rs.gbif.org/extension/gbif/1.0/distribution.xml">Species
 Distribution</a>.</p>
-<pre class="r"><code>distribution &lt;-
-  input_data %&gt;% 
+<p>Information for <code>eventDate</code> is contained in
+<code>date_first_observation</code> and
+<code>date_last_observation</code>, which we will express here in an ISO
+8601 date format <code>yyyy/yyyy</code>
+(<code>start_date/end_date</code>).</p>
+<p>Not all cells for <code>date_first_observation</code> (DFO) and/or
+<code>date_last_observation</code> (DLO) are populated. So, we used the
+following rules for those records:</p>
+<p><strong><em>case 1.</em></strong> If <code>DFO</code> is empty and
+<code>DLO</code> is empty, <code>eventDate</code> is <code>NA</code>
+<strong><em>case 2.</em></strong> If <code>DFO</code> is empty and
+<code>DLO</code> is not empty: eventDate = <code>/DLO</code>
+<strong><em>case 3.</em></strong> If <code>DFO</code> is not empty and
+<code>DLO</code> is empty, eventDate is <code>DFO/</code></p>
+<pre class="r"><code># dwc mapping
+distribution &lt;-
+  input_data %&gt;%
+  # pathway
+  pivot_longer(
+    names_to = &quot;key&quot;,
+    values_to = &quot;pathway&quot;,
+    starts_with(&quot;introduction_pathway&quot;),
+    values_drop_na = FALSE) %&gt;%
+  filter( # keep NA value for species with no pathway provided
+    !is.na(pathway) |
+      (is.na(pathway) &amp; key == &quot;introduction_pathway_1&quot;)
+    ) %&gt;%
+  # other terms
   dplyr::mutate(
     taxonID = taxon_id,
     locationID = dplyr::case_when(
@@ -420,62 +513,81 @@ Distribution</a>.</p>
       location == &quot;Wallonia&quot; ~ &quot;Walloon Region&quot;,
       location == &quot;Brussels&quot; ~ &quot;Brussels-Capital Region&quot;
     ),
-    countryCode = &quot;BE&quot;,
+    countryCode = country_code,
     occurrenceStatus = occurrence_status,
-    establishmentMeans = &quot;introduced&quot;,
+    establishmentMeans = establishment_means,
     degreeOfEstablishment = degree_of_establishment,
-    pathway = introduction_pathway, 
-    eventDate = dplyr::recode( # need to be updated
-      date_first_observation,
-      &quot;20xx&quot; = &quot;2000&quot;,
-      &quot;17th c.&quot; = &quot;1601&quot;,
-      &quot;1980s&quot; = &quot;1980&quot;,
-      &quot;13th c.&quot; = &quot;1201&quot;
+    pathway = pathway,
+    eventDate = case_when(
+      is.na(date_first_observation) &amp; is.na(date_last_observation) ~ NA,
+      is.na(date_first_observation) ~ paste0(&quot;/&quot;, date_last_observation),
+      is.na(date_last_observation) ~ paste0(date_first_observation, &quot;/&quot;),
+      !is.na(date_first_observation) &amp; !is.na(date_last_observation) ~ 
+        paste(date_first_observation, date_last_observation, sep = &quot;/&quot;)
     ),
-    eventDate = paste0(eventDate, &quot;/&quot;),
-    .keep = &quot;none&quot;
-  ) %&gt;% 
-  dplyr::mutate(pathway = strsplit(as.character(pathway), &quot; &quot;)) %&gt;% 
-  tidyr::unnest(pathway) %&gt;% 
-  dplyr::filter(pathway != &quot;|&quot;) %&gt;% 
-  dplyr::arrange(taxonID)</code></pre>
-</div>
-<div id="create-description-extension" class="section level1">
-<h1>Create description extension</h1>
+    source = source,
+    occurrenceRemarks = occurrence_remarks,
+    .keep = &quot;none&quot;) %&gt;%
+  select(
+    &quot;taxonID&quot;, &quot;locationID&quot;, &quot;locality&quot;, &quot;countryCode&quot;, &quot;occurrenceStatus&quot;,
+    &quot;establishmentMeans&quot;, &quot;degreeOfEstablishment&quot;, &quot;pathway&quot;, 
+    &quot;eventDate&quot;, &quot;source&quot;, &quot;occurrenceRemarks&quot;
+  ) </code></pre>
+<div id="species-profile-extension" class="section level2" number="5.1">
+<h2><span class="header-section-number">5.1</span> Species profile
+extension</h2>
+<p>In this extension we will express broad habitat characteristics of
+the species (e.g. <code>isTerrestrial</code>).</p>
+<p>Create a dataframe with unique taxa only (ignoring multiple
+distribution rows). Only keep records for which
+<code>terrestrial</code>, <code>marine</code> and
+<code>freshwater</code> is not empty.</p>
 <p>Map the data to <a
-href="http://rs.gbif.org/extension/gbif/1.0/description.xml">Taxon
-Description</a>. <code>raw_origin</code> contains multiple values
-(currently not more than 2), so we separate it on <code>" or "</code> in
-2 columns.</p>
-<pre class="r"><code>description &lt;- 
-  input_data %&gt;% 
-  dplyr::filter(!is.na(native_range)) %&gt;% 
-  dplyr::mutate(
+href="http://rs.gbif.org/extension/gbif/1.0/speciesprofile.xml">Species
+Profile</a>.</p>
+<pre class="r"><code>species_profile &lt;-
+  input_data %&gt;%
+  distinct(taxon_id, .keep_all = TRUE) %&gt;% 
+  filter(
+    !is.na(terrestrial) |
+      !is.na(marine) |
+      !is.na(freshwater)
+  ) %&gt;% 
+  mutate(
+    .keep = &quot;none&quot;,
     taxonID = taxon_id,
-    description = strsplit(as.character(native_range), &quot; or &quot;),
+    isMarine = marine,
+    isFreshwater = freshwater,
+    isTerrestrial = terrestrial
+  ) %&gt;% 
+  arrange(taxonID)</code></pre>
+</div>
+<div id="description-extension" class="section level2" number="5.2">
+<h2><span class="header-section-number">5.2</span> Description
+extension</h2>
+<p>In the description extension we want to include the native range of a
+species</p>
+<pre class="r"><code>description &lt;-
+  input_data %&gt;% 
+  # unique taxa only (ignoring multiple distribution rows)
+  distinct(taxon_id, .keep_all = TRUE) %&gt;% 
+  # Separate values on `|` 
+  mutate(native_range = strsplit(native_range, &quot;\\|&quot;)) %&gt;% 
+  unnest(native_range) %&gt;% 
+  filter(!is.na(native_range)) %&gt;% 
+  mutate(
+    .keep = &quot;none&quot;,
+    taxonID = taxon_id,
+    description = str_trim(native_range),
     type = &quot;native range&quot;,
-    language = &quot;en&quot;,
-    .keep = &quot;none&quot;
-  ) %&gt;% 
-  tidyr::unnest(description) %&gt;% 
-  dplyr::arrange(taxonID) </code></pre>
+    language = &quot;en&quot;
+    ) %&gt;% 
+  select(&quot;taxonID&quot;, &quot;description&quot;, &quot;type&quot;, &quot;language&quot;) %&gt;% 
+  arrange(taxonID)</code></pre>
 </div>
-<div id="create-species-profile-extension" class="section level1">
-<h1>Create species profile extension</h1>
-<pre class="r"><code>species_profile &lt;- 
-  input_data %&gt;% 
-  dplyr::mutate(
-    taxonID = taxon_id,
-    isMarine = ifelse(realm == &quot;marine&quot;, TRUE, FALSE),
-    isFreshwater = ifelse(realm == &quot;freshwater&quot;, TRUE, FALSE),
-    isTerrestrial = ifelse(realm == &quot;terrestrial&quot;, TRUE, FALSE),
-    .keep = &quot;none&quot;
-  ) %&gt;% 
-  dplyr::arrange(taxonID)
-#estuarine is missing?</code></pre>
 </div>
-<div id="save-to-csv" class="section level1">
-<h1>Save to CSV:</h1>
+<div id="save-to-csv" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> Save to CSV</h1>
 <pre class="r"><code>readr::write_csv(taxon, file = here::here(&quot;data&quot;, &quot;processed&quot;, &quot;taxon.csv&quot;), na = &quot;&quot;)
 readr::write_csv(vernacular_names, file = here::here(&quot;data&quot;, &quot;processed&quot;, &quot;vernacularname.csv&quot;), na = &quot;&quot;)
 readr::write_csv(distribution, file = here::here(&quot;data&quot;, &quot;processed&quot;, &quot;distribution.csv&quot;), na = &quot;&quot;)
@@ -485,6 +597,8 @@ readr::write_csv(species_profile, file = here::here(&quot;data&quot;, &quot;proc
 
 
 
+</div>
+</div>
 
 </div>
 
@@ -517,6 +631,35 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
