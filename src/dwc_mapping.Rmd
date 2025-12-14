@@ -8,6 +8,11 @@ author:
 date: "`r Sys.Date()`"
 output:
   html_document:
+    df_print: paged
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
 ---
 
 This script prepares checklist data for publication on GBIF. The source file for this document can be found [here](https://github.com/trias-project/alien-fishes-checklist/blob/master/src/dwc_mapping.Rmd).
