@@ -360,15 +360,7 @@ Flanders, Belgium</h3>
 
 <p>This script prepares checklist data for publication on GBIF. The
 source file for this document can be found <a
-href="https://github.com/trias-project/alien-fishes-checklist/blob/master/src/dwc_mapping.Rmd">here</a>.
-It downloads the checklist data from <a
-href="https://docs.google.com/spreadsheets/d/1LeXXbry2ArK2rngsmFjz_xErwE1KwQ8ujtvHNmTVA6E/edit#gid=961223689">this
-Google Spreadsheet</a>, where these data are maintained. The script
-transforms the data to a <a
-href="https://www.gbif.org/dataset-classes">Darwin Core checklist</a>
-that can be harvested by <a href="http://www.gbif.org">GBIF</a>. It was
-developed for the <a href="http://trias-project.be">TrIAS
-project</a>.</p>
+href="https://github.com/trias-project/alien-fishes-checklist/blob/master/src/dwc_mapping.Rmd">here</a>.</p>
 <p>Load libraries:</p>
 <pre class="r"><code>library(tidyverse)
 library(magrittr)
@@ -377,10 +369,13 @@ library(digest)
 library(here)</code></pre>
 <div id="read-source-data" class="section level1" number="1">
 <h1><span class="header-section-number">1</span> Read source data</h1>
-<p>Read the relevant worksheet (published as csv) and Copy the source
-data to the repository to keep track of changes.</p>
-<pre class="r"><code>raw_data &lt;-read_csv(&quot;https://docs.google.com/spreadsheets/d/e/2PACX-1vTl8IEk2fProQorMu5xKQPdMXl3OQp-c0f6eBXitv0BiVFZ3JSJCde0PtbFXuETgguf6vK8b43FDX1C/pub?gid=1963824857&amp;single=true&amp;output=csv&quot;, na = &quot;NA&quot;)
-readr::write_csv(raw_data, here(&quot;data&quot;, &quot;raw&quot;, &quot;alien_fisches_checklist_dump.csv&quot;), na = &quot;&quot;)</code></pre>
+<p>The data are maintained in <a
+href="https://docs.google.com/spreadsheets/d/1LeXXbry2ArK2rngsmFjz_xErwE1KwQ8ujtvHNmTVA6E/edit#gid=961223689">this
+Google Spreadsheet</a>.</p>
+<p>Read the relevant worksheet (published as csv):</p>
+<pre class="r"><code>raw_data &lt;-read_csv(&quot;https://docs.google.com/spreadsheets/d/e/2PACX-1vTl8IEk2fProQorMu5xKQPdMXl3OQp-c0f6eBXitv0BiVFZ3JSJCde0PtbFXuETgguf6vK8b43FDX1C/pub?gid=1963824857&amp;single=true&amp;output=csv&quot;, na = &quot;NA&quot;)</code></pre>
+<p>Copy the source data to the repository to keep track of changes:</p>
+<pre class="r"><code>readr::write_csv(raw_data, here(&quot;data&quot;, &quot;raw&quot;, &quot;alien_fishes_checklist_dump.csv&quot;), na = &quot;&quot;)</code></pre>
 </div>
 <div id="preprocessing-tidy-data-and-add-taxon-ids"
 class="section level1" number="2">
